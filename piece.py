@@ -1,4 +1,6 @@
 from enum import Enum
+from PIL import ImageTk, Image
+import tkinter as tk
 
 class Color(Enum):
     UNDEFINED = 0
@@ -20,6 +22,19 @@ class Piece:
         self.type = type
         self.color = color
         self.has_moved = False # this will be used for en passant, double pawn moves, and castling
+
+    # draw piece according to provided size at (x, y) on canvas
+    # this func is making me realize i should've used polymorphism after all but it would way harder to refactor now
+    def draw(self, canvas, x, y, size):
+        color_string = str(self.color)[6:].lower()
+        print(color_string)
+        type_string = str(self.type)[10:].lower()
+        print(type_string)
+        path = "./sprites/" + color_string + "_" + type_string + ".png"
+        print(path)
+        img = tk.PhotoImage(file=path)
+        canvas.create_image(0, 64, image = img, anchor = tk.NW)
+        
 '''
 class Piece:
     # returns true if a piece in the spot (x, y) could be taken by an opposing piece

@@ -2,7 +2,7 @@ from piece import *
 
 '''
 NOTES:
-    - Starting board position is (1, 1) in the bottom left, going up to (8, 8) in the top right
+    - Starting board position is (1, 1) in the top left, going to (8, 8) in the bottom right
 '''
 class Board:
     def __init__ (self):
@@ -58,9 +58,9 @@ class Board:
         # check for pawns
         multiplier:int
         if (color == Color.WHITE):
-            multiplier = 1 # threats come from above
+            multiplier = -1 # threats come from above
         else:
-            multiplier = -1 # threats come from below
+            multiplier = 1 # threats come from below
 
         nextPos = (x-1, y+multiplier)
         if (nextPos in self.spaces & self.spaces[nextPos].color != color & self.spaces[nextPos].type == PieceType.PAWN):
@@ -148,9 +148,9 @@ class Board:
             # set multiplier
             multiplier:int
             if (piece.color == Color.WHITE):
-                multiplier = 1 # can only move up
+                multiplier = -1 # can only move up
             else:
-                multiplier = -1 # can only move down
+                multiplier = 1 # can only move down
 
             # check one space forward
             nextY = y + multiplier
@@ -333,5 +333,55 @@ class Board:
                     moves.append(move)
 
     # set up the board in default configuration   
-    def initialize(self):
-        pass
+    def initialize (self):
+        #pawns
+        for x in range(1, 9):
+            self.createPiece(PieceType.PAWN, Color.WHITE, x, 7)
+            self.createPiece(PieceType.PAWN, Color.BLACK, x, 2)
+        #rooks
+        self.createPiece(PieceType.ROOK, Color.WHITE, 1, 8)
+        self.createPiece(PieceType.ROOK, Color.WHITE, 8, 8)
+        self.createPiece(PieceType.ROOK, Color.BLACK, 1, 1)
+        self.createPiece(PieceType.ROOK, Color.BLACK, 8, 1)
+        #knights
+        self.createPiece(PieceType.KNIGHT, Color.WHITE, 2, 8)
+        self.createPiece(PieceType.KNIGHT, Color.WHITE, 7, 8)
+        self.createPiece(PieceType.KNIGHT, Color.BLACK, 2, 1)
+        self.createPiece(PieceType.KNIGHT, Color.BLACK, 7, 1)
+        #bishops
+        self.createPiece(PieceType.BISHOP, Color.WHITE, 3, 8)
+        self.createPiece(PieceType.BISHOP, Color.WHITE, 6, 8)
+        self.createPiece(PieceType.BISHOP, Color.BLACK, 3, 1)
+        self.createPiece(PieceType.BISHOP, Color.BLACK, 6, 1)
+        #queens
+        self.createPiece(PieceType.QUEEN, Color.WHITE, 4, 8)
+        self.createPiece(PieceType.QUEEN, Color.BLACK, 4, 1)
+        #kings
+        self.createPiece(PieceType.KING, Color.WHITE, 5, 8)
+        self.createPiece(PieceType.KING, Color.BLACK, 5, 1)
+        
+
+    # draw the board using tkinter
+    # TODO: change colors
+    def drawBoard (self, canvas):
+        # lighter squares
+        for x in range(0, 512, 128):
+            for y in range(0, 512, 128):
+                canvas.create_rectangle(x, y, x+64, y+64, fill="red")
+        for x in range(64, 512, 128):
+            for y in range(64, 512, 128):
+                canvas.create_rectangle(x, y, x+64, y+64, fill="red")
+
+        # darker squares
+        for x in range(64, 512, 128):
+            for y in range(0, 512, 128):
+                canvas.create_rectangle(x, y, x+64, y+64, fill="blue")
+        for x in range(0, 512, 128):
+            for y in range(64, 512, 128):
+                canvas.create_rectangle(x, y, x+64, y+64, fill="blue")
+        
+        # pieces
+        for pair in self.spaces.items():
+            pos = pair[0]
+            piece = pair[1]
+            piece.draw(canvas, pos[0], pos[1], 64)
