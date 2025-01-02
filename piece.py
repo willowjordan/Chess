@@ -22,18 +22,33 @@ class Piece:
         self.type = type
         self.color = color
         self.has_moved = False # this will be used for en passant, double pawn moves, and castling
+        
+        # create image for piece (this will hopefully avoid garbage collection problems)
+        color_string = str(self.color)[6:].lower()
+        type_string = str(self.type)[10:].lower()
+        path = "./sprites/" + color_string + "_" + type_string + ".png"
+        self.img = tk.PhotoImage(file=path).zoom(2, 2)
 
-    # draw piece according to provided size at (x, y) on canvas
-    # this func is making me realize i should've used polymorphism after all but it would way harder to refactor now
+    def __str__(self):
+        return "Piece[id=" + str(self.id) + ", color=" + str(self.color) + ", type=" + str(self.type) + "]"
+
+    '''# draw piece according to provided size at (x, y) on canvas
     def draw(self, canvas, x, y, size):
         color_string = str(self.color)[6:].lower()
-        print(color_string)
         type_string = str(self.type)[10:].lower()
-        print(type_string)
         path = "./sprites/" + color_string + "_" + type_string + ".png"
-        print(path)
         img = tk.PhotoImage(file=path)
-        canvas.create_image(0, 64, image = img, anchor = tk.NW)
+        canvas.create_image(0, 0, image = img, anchor = tk.NW)
+
+    # get an image of piece of size (width, height) in pixels
+    def getImage(self, width, height):
+        color_string = str(self.color)[6:].lower()
+        type_string = str(self.type)[10:].lower()
+        path = "./sprites/" + color_string + "_" + type_string + ".png"
+        img = tk.PhotoImage(file=path)
+        dW = width / img.width()
+        dH = height / img.height()
+        return img.zoom(dW, dH)'''
         
 '''
 class Piece:

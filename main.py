@@ -20,10 +20,7 @@ canvas = tk.Canvas(root, width=128*5, height=128*5)
 canvas.pack()
 
 board = Board()
-board.createPiece(PieceType.ROOK, Color.WHITE, 1, 1)
+board.initialize()
 board.drawBoard(canvas)
-
-rook = Piece(1, PieceType.ROOK, Color.WHITE)
-rook.draw(canvas, 0, 0, 64)
 
 root.mainloop()

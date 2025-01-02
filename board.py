@@ -5,6 +5,9 @@ NOTES:
     - Starting board position is (1, 1) in the top left, going to (8, 8) in the bottom right
 '''
 class Board:
+    LIGHT_SQUARE_COLOR = "#e2d2a1"
+    DARK_SQUARE_COLOR = "#ae9f70"
+
     def __init__ (self):
         self.spaces:dict = {} # this is the board itself
         self.whiteAlive:dict = {}
@@ -367,21 +370,23 @@ class Board:
         # lighter squares
         for x in range(0, 512, 128):
             for y in range(0, 512, 128):
-                canvas.create_rectangle(x, y, x+64, y+64, fill="red")
+                canvas.create_rectangle(x, y, x+64, y+64, fill=Board.LIGHT_SQUARE_COLOR)
         for x in range(64, 512, 128):
             for y in range(64, 512, 128):
-                canvas.create_rectangle(x, y, x+64, y+64, fill="red")
+                canvas.create_rectangle(x, y, x+64, y+64, fill=Board.LIGHT_SQUARE_COLOR)
 
         # darker squares
         for x in range(64, 512, 128):
             for y in range(0, 512, 128):
-                canvas.create_rectangle(x, y, x+64, y+64, fill="blue")
+                canvas.create_rectangle(x, y, x+64, y+64, fill=Board.DARK_SQUARE_COLOR)
         for x in range(0, 512, 128):
             for y in range(64, 512, 128):
-                canvas.create_rectangle(x, y, x+64, y+64, fill="blue")
-        
+                canvas.create_rectangle(x, y, x+64, y+64, fill=Board.DARK_SQUARE_COLOR)
+
         # pieces
         for pair in self.spaces.items():
             pos = pair[0]
+            realPos = ((pos[0]-1)*64, (pos[1]-1)*64)
             piece = pair[1]
-            piece.draw(canvas, pos[0], pos[1], 64)
+            #print ("Drawing " + str(piece) + " at (" + str(pos[0]) + ", " + str(pos[1]) + ")")
+            canvas.create_image(realPos[0], realPos[1], image = piece.img, anchor = tk.NW)
