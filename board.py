@@ -1,4 +1,5 @@
 from piece import *
+import tkinter as tk
 
 '''
 NOTES:
@@ -8,7 +9,8 @@ class Board:
     LIGHT_SQUARE_COLOR = "#e2d2a1"
     DARK_SQUARE_COLOR = "#ae9f70"
 
-    def __init__ (self):
+    # pos = (x, y) coordinates for the top left corner of the board to be drawn at
+    def __init__ (self, pos):
         self.spaces:dict = {} # this is the board itself
         self.whiteAlive:dict = {}
         self.whiteDead:dict = {}
@@ -17,6 +19,10 @@ class Board:
         self.max_x = 8
         self.max_y = 8
         self.piecesCreated = 0
+        self.pos = pos
+        self.buttons = []
+        self.curr_player = Color.WHITE # whose turn it is
+        self.selected_square = (-1, -1) # the square of the piece currently selected by the player, (-1, -1) if no piece selected
 
     # create a new piece and insert it onto the board
     def createPiece (self, type, color, x, y):
@@ -362,31 +368,106 @@ class Board:
         #kings
         self.createPiece(PieceType.KING, Color.WHITE, 5, 8)
         self.createPiece(PieceType.KING, Color.BLACK, 5, 1)
-        
 
     # draw the board using tkinter
     # TODO: change colors
-    def drawBoard (self, canvas):
-        # lighter squares
-        for x in range(0, 512, 128):
-            for y in range(0, 512, 128):
+    def drawBoard (self, root, canvas):
+        # create a button for every square on the board
+        light_square = True
+        for i in range(0, 512, 64):
+            for j in range(0, 512, 64):
+                # positioning variables
+                x = self.pos[0] + i
+                y = self.pos[1] + j
+                a = i / 64 + 1
+                b = j / 64 + 1
+
+                # get square's background color
+                bgColor: str
+                if (light_square): bgColor = Board.LIGHT_SQUARE_COLOR
+                else: bgColor = Board.DARK_SQUARE_COLOR
+                #TODO: add logic for if a square is selected, or is a potential move for the selected piece
+
+                # get image
+                img: str
+                if (a, b) in self.spaces.keys(): img = self.spaces[(a, b)].img
+                else: img = tk.PhotoImage(file="./sprites/transparent_image.png")
+
+                # create button
+                button = tk.Button(root, width=a, height=b, command= lambda: self.handleClick(button.winfo_width(), button.winfo_height()), text="", image=img)
+                button.configure(background=bgColor)
+                button_window = canvas.create_window(x, y, width=64, height=64, anchor=tk.NW, window=button)
+
+                # flip square color
+                light_square = not light_square
+            # flip square color
+            light_square = not light_square
+
+        # draw grid lines
+
+
+
+
+
+
+
+        '''# lighter squares
+        for i in range(0, 512, 128):
+            x = self.pos[0] + i
+            for j in range(0, 512, 128):
+                y = self.pos[1] + j
                 canvas.create_rectangle(x, y, x+64, y+64, fill=Board.LIGHT_SQUARE_COLOR)
-        for x in range(64, 512, 128):
-            for y in range(64, 512, 128):
+        for i in range(64, 512, 128):
+            x = self.pos[0] + i
+            for j in range(64, 512, 128):
+                y = self.pos[1] + j
                 canvas.create_rectangle(x, y, x+64, y+64, fill=Board.LIGHT_SQUARE_COLOR)
 
         # darker squares
-        for x in range(64, 512, 128):
-            for y in range(0, 512, 128):
+        for i in range(64, 512, 128):
+            x = self.pos[0] + i
+            for j in range(0, 512, 128):
+                y = self.pos[1] + j
                 canvas.create_rectangle(x, y, x+64, y+64, fill=Board.DARK_SQUARE_COLOR)
-        for x in range(0, 512, 128):
-            for y in range(64, 512, 128):
+        for i in range(0, 512, 128):
+            x = self.pos[0] + i
+            for j in range(64, 512, 128):
+                y = self.pos[1] + j
                 canvas.create_rectangle(x, y, x+64, y+64, fill=Board.DARK_SQUARE_COLOR)
+
+        # highlight possible moves of selected square
+
+
+        # create invisible buttons for all squares (they will become translucent on hover)
+        for i in range(0, 512, 64):
+            for j in range(0, 512, 64):
+                # positioning variables
+                x = self.pos[0] + i
+                y = self.pos[1] + j
+                a = i / 64 + 1
+                b = j / 64 + 1
+
+                # create button
+                #bgImage = ImageTk.PhotoImage(Image.open("./sprites/transparent_image.png"))
+                #button = tk.Button(root, command= lambda: self.handleClick(a, b), image=bgImage)
+                #button = tk.Button(root, command= lambda: self.handleClick(a, b), text="TestButton")
+                #button.configure(width=64, height=64)
+                #button_window = canvas.create_window(x, y)
+
+                #button = tk.Button(root, text = "", command = lambda: self.handleClick(a, b), anchor = tk.W)
+                #button.configure(background="#e2d2a1", activebackground = "#33B5E5", relief = tk.FLAT)
+                #button_window = canvas.create_window(x, y, width=64, height=64, anchor=tk.NW, window=button)
 
         # pieces
         for pair in self.spaces.items():
             pos = pair[0]
-            realPos = ((pos[0]-1)*64, (pos[1]-1)*64)
+            realPos = (self.pos[0]+(pos[0]-1)*64+1, self.pos[1]+(pos[1]-1)*64+1)
             piece = pair[1]
             #print ("Drawing " + str(piece) + " at (" + str(pos[0]) + ", " + str(pos[1]) + ")")
-            canvas.create_image(realPos[0], realPos[1], image = piece.img, anchor = tk.NW)
+            canvas.create_image(realPos[0], realPos[1], image = piece.img, anchor = tk.NW)'''
+        
+    
+    # handle the square at (x, y) being clicked
+    # for spaces with friendly pieces, show all that pieces moves
+    def handleClick (self, x, y):
+        print("Button pushed at " + str(x) + ", " + str(y))
