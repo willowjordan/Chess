@@ -379,8 +379,8 @@ class Board:
                 # positioning variables
                 x = self.pos[0] + i
                 y = self.pos[1] + j
-                a = i / 64 + 1
-                b = j / 64 + 1
+                a = i // 64 + 1
+                b = j // 64 + 1
 
                 # get square's background color
                 bgColor: str
@@ -388,13 +388,15 @@ class Board:
                 else: bgColor = Board.DARK_SQUARE_COLOR
                 #TODO: add logic for if a square is selected, or is a potential move for the selected piece
 
-                # get image
-                img: str
-                if (a, b) in self.spaces.keys(): img = self.spaces[(a, b)].img
-                else: img = tk.PhotoImage(file="./sprites/transparent_image.png")
-
                 # create button
-                button = tk.Button(root, width=a, height=b, command= lambda: self.handleClick(button.winfo_width(), button.winfo_height()), text="", image=img)
+                button: tk.Button
+                if (a, b) in self.spaces.keys():
+                    img = self.spaces[(a, b)].img
+                    button = tk.Button(root, width=a, height=b, command= lambda: self.handleClick(root), text="", image=img)
+                else:
+                    button = tk.Button(root, width=a, height=b, command= lambda: self.handleClick(root), text="")
+                
+                # place button
                 button.configure(background=bgColor)
                 button_window = canvas.create_window(x, y, width=64, height=64, anchor=tk.NW, window=button)
 
@@ -469,5 +471,9 @@ class Board:
     
     # handle the square at (x, y) being clicked
     # for spaces with friendly pieces, show all that pieces moves
-    def handleClick (self, x, y):
+    def handleClick (self, root):
+        x = (root.winfo_pointerx() - root.winfo_rootx() - self.pos[0]) // 64
+        y = (root.winfo_pointery() - root.winfo_rooty() - self.pos[1]) // 64
+        print(root.winfo_pointerx() - root.winfo_rootx() - self.pos[0])
+        print(root.winfo_pointery() - root.winfo_rooty() - self.pos[1])
         print("Button pushed at " + str(x) + ", " + str(y))
