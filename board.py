@@ -8,6 +8,10 @@ NOTES:
 class Board:
     LIGHT_SQUARE_COLOR = "#e2d2a1"
     DARK_SQUARE_COLOR = "#ae9f70"
+    SELECTED_SQUARE_COLOR = "#6ce565"
+    NORMAL_MOVE_COLOR = "#65a2e5"
+    CAPTURE_MOVE_COLOR = "#e56565"
+    SPECIAL_MOVE_COLOR = "#b465e5"
 
     # pos = (x, y) coordinates for the top left corner of the board to be drawn at
     def __init__ (self, pos):
@@ -36,9 +40,10 @@ class Board:
             self.blackAlive[piece.id] = piece
     
     # to be used ONLY FOR REMOVING PIECES FROM THE BOARD ENTIRELY
-    def removePiece (self, x, y):
-        piece = self.spaces[(x, y)]
-        self.spaces.pop((x, y))
+    # pos is a tuple representing (x, y) coordinates
+    def removePiece (self, pos):
+        piece = self.spaces[pos]
+        self.spaces.pop(pos)
         if (piece.color == Color.WHITE):
             self.whiteAlive.pop(piece.id)
             self.whiteDead[piece.id] = piece
@@ -48,14 +53,14 @@ class Board:
 
     # move piece from starting point to ending point
     # if there is another piece occupying that space, remove (take) that piece
-    def movePiece (self, startX, startY, endX, endY):
-        pieceMoving = self.spaces[(startX, startY)]
+    # startPos and endPos are tuples representing (x, y) coordinates
+    def movePiece (self, startPos, endPos):
         # check if there's a piece occupying the spot to be moved to
         # if so, take it
-        if (endX, endY) in self.spaces:
-            self.remove(endX, endY)
-        self.spaces[(endX, endY)] = self.spaces[(startX, startY)]
-        self.spaces.pop((startX, startY))
+        if endPos in self.spaces:
+            self.removePiece(endPos)
+        self.spaces[endPos] = self.spaces[startPos]
+        self.spaces.pop(startPos)
 
     # for better clarity
     def getPiece (self, x, y):
@@ -150,7 +155,9 @@ class Board:
         # TODO: check for kings (maybe work in with pawns)
 
 
-    def getMoves (self, x, y):
+    def getMoves (self, pos):
+        x = pos[0]
+        y = pos[1]
         piece = self.spaces[(x, y)]
         moves = []
         if (piece.type == PieceType.PAWN):
@@ -340,6 +347,8 @@ class Board:
                         moves.append(move) #this will capture the piece
                 else: #not occupied
                     moves.append(move)
+        
+        return moves
 
     # set up the board in default configuration   
     def initialize (self):
@@ -386,15 +395,19 @@ class Board:
                 bgColor: str
                 if (light_square): bgColor = Board.LIGHT_SQUARE_COLOR
                 else: bgColor = Board.DARK_SQUARE_COLOR
-                #TODO: add logic for if a square is selected, or is a potential move for the selected piece
+                if (self.selected_square == (a, b)): bgColor = Board.SELECTED_SQUARE_COLOR
+                if (self.selected_square != (-1, -1)):
+                    squaresToHighlight = self.getMoves(self.selected_square)
+                    if (a, b) in squaresToHighlight:
+                        bgColor = Board.NORMAL_MOVE_COLOR
 
                 # create button
                 button: tk.Button
-                if (a, b) in self.spaces.keys():
+                if (a, b) in self.spaces:
                     img = self.spaces[(a, b)].img
-                    button = tk.Button(root, width=a, height=b, command= lambda: self.handleClick(root), text="", image=img)
+                    button = tk.Button(root, width=a, height=b, command= lambda: self.handleClick(root, canvas), text="", image=img)
                 else:
-                    button = tk.Button(root, width=a, height=b, command= lambda: self.handleClick(root), text="")
+                    button = tk.Button(root, width=a, height=b, command= lambda: self.handleClick(root, canvas), text="")
                 
                 # place button
                 button.configure(background=bgColor)
@@ -407,73 +420,27 @@ class Board:
 
         # draw grid lines
 
-
-
-
-
-
-
-        '''# lighter squares
-        for i in range(0, 512, 128):
-            x = self.pos[0] + i
-            for j in range(0, 512, 128):
-                y = self.pos[1] + j
-                canvas.create_rectangle(x, y, x+64, y+64, fill=Board.LIGHT_SQUARE_COLOR)
-        for i in range(64, 512, 128):
-            x = self.pos[0] + i
-            for j in range(64, 512, 128):
-                y = self.pos[1] + j
-                canvas.create_rectangle(x, y, x+64, y+64, fill=Board.LIGHT_SQUARE_COLOR)
-
-        # darker squares
-        for i in range(64, 512, 128):
-            x = self.pos[0] + i
-            for j in range(0, 512, 128):
-                y = self.pos[1] + j
-                canvas.create_rectangle(x, y, x+64, y+64, fill=Board.DARK_SQUARE_COLOR)
-        for i in range(0, 512, 128):
-            x = self.pos[0] + i
-            for j in range(64, 512, 128):
-                y = self.pos[1] + j
-                canvas.create_rectangle(x, y, x+64, y+64, fill=Board.DARK_SQUARE_COLOR)
-
-        # highlight possible moves of selected square
-
-
-        # create invisible buttons for all squares (they will become translucent on hover)
-        for i in range(0, 512, 64):
-            for j in range(0, 512, 64):
-                # positioning variables
-                x = self.pos[0] + i
-                y = self.pos[1] + j
-                a = i / 64 + 1
-                b = j / 64 + 1
-
-                # create button
-                #bgImage = ImageTk.PhotoImage(Image.open("./sprites/transparent_image.png"))
-                #button = tk.Button(root, command= lambda: self.handleClick(a, b), image=bgImage)
-                #button = tk.Button(root, command= lambda: self.handleClick(a, b), text="TestButton")
-                #button.configure(width=64, height=64)
-                #button_window = canvas.create_window(x, y)
-
-                #button = tk.Button(root, text = "", command = lambda: self.handleClick(a, b), anchor = tk.W)
-                #button.configure(background="#e2d2a1", activebackground = "#33B5E5", relief = tk.FLAT)
-                #button_window = canvas.create_window(x, y, width=64, height=64, anchor=tk.NW, window=button)
-
-        # pieces
-        for pair in self.spaces.items():
-            pos = pair[0]
-            realPos = (self.pos[0]+(pos[0]-1)*64+1, self.pos[1]+(pos[1]-1)*64+1)
-            piece = pair[1]
-            #print ("Drawing " + str(piece) + " at (" + str(pos[0]) + ", " + str(pos[1]) + ")")
-            canvas.create_image(realPos[0], realPos[1], image = piece.img, anchor = tk.NW)'''
         
     
     # handle the square at (x, y) being clicked
-    # for spaces with friendly pieces, show all that pieces moves
-    def handleClick (self, root):
-        x = (root.winfo_pointerx() - root.winfo_rootx() - self.pos[0]) // 64
-        y = (root.winfo_pointery() - root.winfo_rooty() - self.pos[1]) // 64
-        print(root.winfo_pointerx() - root.winfo_rootx() - self.pos[0])
-        print(root.winfo_pointery() - root.winfo_rooty() - self.pos[1])
-        print("Button pushed at " + str(x) + ", " + str(y))
+    # for spaces with friendly pieces, select that piece and show its moves
+    # click again to deselect, or click one of those spaces to make the move
+    def handleClick (self, root, canvas):
+        # determine which button was clicked based on cursor position
+        x = (root.winfo_pointerx() - root.winfo_rootx() - self.pos[0]) // 64 + 1
+        y = (root.winfo_pointery() - root.winfo_rooty() - self.pos[1]) // 64 + 1
+        clickPos = (x, y)
+        
+        if (self.selected_square == (-1, -1)): # no square selected
+            if (clickPos in self.spaces):
+                if (self.curr_player == self.spaces[clickPos].color): #space occupied by friendly piece
+                    self.selected_square = clickPos
+                    self.drawBoard(root, canvas) #redraw board to show changes
+        else: #square selected
+            if (self.selected_square in self.spaces):
+                moves = self.getMoves(self.selected_square)
+                if clickPos in moves:
+                    self.movePiece(self.selected_square, clickPos)
+            self.selected_square = (-1, -1) #deselect
+            self.drawBoard(root, canvas)
+            
