@@ -27,6 +27,7 @@ class Board:
         self.buttons = []
         self.curr_player = Color.WHITE # whose turn it is
         self.selected_square = (-1, -1) # the square of the piece currently selected by the player, (-1, -1) if no piece selected
+        self.ep_clear_list = [] # list of en passant values to reset at the end of the turn
 
     # create a new piece and insert it onto the board
     def createPiece (self, type, color, x, y):
@@ -55,12 +56,29 @@ class Board:
     # if there is another piece occupying that space, remove (take) that piece
     # startPos and endPos are tuples representing (x, y) coordinates
     def movePiece (self, startPos, endPos):
+        movingPiece = self.spaces[startPos]
         # check if there's a piece occupying the spot to be moved to
         # if so, take it
         if endPos in self.spaces:
             self.removePiece(endPos)
         self.spaces[endPos] = self.spaces[startPos]
         self.spaces.pop(startPos)
+
+        # update info about moving piece as necessary
+        movingPiece.has_moved = True
+        
+        # for pawns, check for en passant
+        if (movingPiece.type == PieceType.PAWN) & (abs(startPos[1]-endPos[1]) == 2): # two square move
+            leftPos = (endPos[0]-1, endPos[1])
+            rightPos = (endPos[0]+1, endPos[1])
+            if leftPos in self.spaces:
+                if self.spaces[leftPos].color != movingPiece.color:
+                    self.spaces[leftPos].ep_pos = endPos
+                    self.ep_clear_list.append(leftPos)
+            if rightPos in self.spaces:
+                if self.spaces[rightPos].color != movingPiece.color:
+                    self.spaces[rightPos].ep_pos = endPos
+                    self.ep_clear_list.append(rightPos)
 
     # for better clarity
     def getPiece (self, x, y):
@@ -77,68 +95,74 @@ class Board:
             multiplier = 1 # threats come from below
 
         nextPos = (x-1, y+multiplier)
-        if (nextPos in self.spaces & self.spaces[nextPos].color != color & self.spaces[nextPos].type == PieceType.PAWN):
-            return True
+        if nextPos in self.spaces:
+            if (self.spaces[nextPos].color != color) & (self.spaces[nextPos].type == PieceType.PAWN):
+                return True
         nextPos = (x+1, y+multiplier)
-        if (nextPos in self.spaces & self.spaces[nextPos].color != color & self.spaces[nextPos].type == PieceType.PAWN):
-            return True
+        if nextPos in self.spaces:
+            if (self.spaces[nextPos].color != color) & (self.spaces[nextPos].type == PieceType.PAWN):
+                return True
 
         # check horiz/vert for rooks/queens
         for nextX in range(x+1, self.max_x+1):
             nextPos = (nextX, y)
             if nextPos in self.spaces: #occupied
-                if self.spaces[nextPos].color != color & (self.spaces[nextPos].type == PieceType.ROOK | self.spaces[nextPos].type == PieceType.QUEEN):
+                if (self.spaces[nextPos].color != color) & ((self.spaces[nextPos].type == PieceType.ROOK) | (self.spaces[nextPos].type == PieceType.QUEEN)):
                     return True
                 break
         for nextX in range(x-1, -1, -1):
             nextPos = (nextX, y)
             if nextPos in self.spaces: #occupied
-                if self.spaces[nextPos].color != color & (self.spaces[nextPos].type == PieceType.ROOK | self.spaces[nextPos].type == PieceType.QUEEN):
+                if (self.spaces[nextPos].color != color) & ((self.spaces[nextPos].type == PieceType.ROOK) | (self.spaces[nextPos].type == PieceType.QUEEN)):
                     return True
                 break
         for nextY in range(y+1, self.max_y+1):
             nextPos = (x, nextY)
             if nextPos in self.spaces: #occupied
-                if self.spaces[nextPos].color != color & (self.spaces[nextPos].type == PieceType.ROOK | self.spaces[nextPos].type == PieceType.QUEEN):
+                if (self.spaces[nextPos].color != color) & ((self.spaces[nextPos].type == PieceType.ROOK) | (self.spaces[nextPos].type == PieceType.QUEEN)):
                     return True
                 break
         for nextY in range(y-1, -1, -1):
             nextPos = (x, nextY)
             if nextPos in self.spaces: #occupied
-                if self.spaces[nextPos].color != color & (self.spaces[nextPos].type == PieceType.ROOK | self.spaces[nextPos].type == PieceType.QUEEN):
+                if (self.spaces[nextPos].color != color) & ((self.spaces[nextPos].type == PieceType.ROOK) | (self.spaces[nextPos].type == PieceType.QUEEN)):
                     return True
                 break
 
         # check diagonals for bishops/queens
         step = 1
-        while (x+step < self.max_x & y+step < self.max_y):
-            newPos = (x+step, y+step)
-            if newPos in self.spaces:
-                if self.spaces[newPos].color != color & (self.spaces[nextPos].type == PieceType.BISHOP | self.spaces[nextPos].type == PieceType.QUEEN):
+        while (x+step < self.max_x) & (y+step < self.max_y):
+            nextPos = (x+step, y+step)
+            if nextPos in self.spaces:
+                print("Piece at " + str(nextPos) + ": " + str(self.spaces[nextPos]))
+                if (self.spaces[nextPos].color != color) & ((self.spaces[nextPos].type == PieceType.BISHOP) | (self.spaces[nextPos].type == PieceType.QUEEN)):
                     return True
                 break
             step += 1
         step = 1
-        while (x+step < self.max_x & y-step >= 0):
-            newPos = (x+step, y-step)
-            if newPos in self.spaces:
-                if self.spaces[newPos].color != color & (self.spaces[nextPos].type == PieceType.BISHOP | self.spaces[nextPos].type == PieceType.QUEEN):
+        while (x+step < self.max_x) & (y-step > 0):
+            nextPos = (x+step, y-step)
+            if nextPos in self.spaces:
+                print("Piece at " + str(nextPos) + ": " + str(self.spaces[nextPos]))
+                if (self.spaces[nextPos].color != color) & ((self.spaces[nextPos].type == PieceType.BISHOP) | (self.spaces[nextPos].type == PieceType.QUEEN)):
                     return True
                 break
             step += 1
         step = 1
-        while (x-step >= 0 & y+step < self.max_y):
-            newPos = (x-step, y+step)
-            if newPos in self.spaces:
-                if self.spaces[newPos].color != color & (self.spaces[nextPos].type == PieceType.BISHOP | self.spaces[nextPos].type == PieceType.QUEEN):
+        while (x-step > 0) & (y+step < self.max_y):
+            nextPos = (x-step, y+step)
+            if nextPos in self.spaces:
+                print("Piece at " + str(nextPos) + ": " + str(self.spaces[nextPos]))
+                if (self.spaces[nextPos].color != color) & ((self.spaces[nextPos].type == PieceType.BISHOP) | (self.spaces[nextPos].type == PieceType.QUEEN)):
                     return True
                 break
             step += 1
         step = 1
-        while (x-step >= 0 & y-step >= 0):
-            newPos = (x-step, y-step)
-            if newPos in self.spaces:
-                if self.spaces[newPos].color != color & (self.spaces[nextPos].type == PieceType.BISHOP | self.spaces[nextPos].type == PieceType.QUEEN):
+        while (x-step > 0) & (y-step > 0):
+            nextPos = (x-step, y-step)
+            if nextPos in self.spaces:
+                print("Piece at " + str(nextPos) + ": " + str(self.spaces[nextPos]))
+                if (self.spaces[nextPos].color != color) & ((self.spaces[nextPos].type == PieceType.BISHOP) | (self.spaces[nextPos].type == PieceType.QUEEN)):
                     return True
                 break
             step += 1
@@ -149,7 +173,7 @@ class Board:
             # check if space is occupied
             if move in self.spaces: #is occupied
                 #check if occupied by friend or foe
-                if self.spaces[move].color != color & self.spaces[move].type == PieceType.KNIGHT:
+                if (self.spaces[move].color != color) & (self.spaces[move].type == PieceType.KNIGHT):
                     return True
 
         # TODO: check for kings (maybe work in with pawns)
@@ -178,9 +202,18 @@ class Board:
                     if (not (x, nextY) in self.spaces):
                         moves.append((x, nextY))
 
-            #TODO: check for capture
+            #check for capture
+            nextY = y + multiplier
+            if (x-1, nextY) in self.spaces:
+                if self.spaces[(x-1, nextY)].color != piece.color:
+                    moves.append((x-1, nextY))
+            if (x+1, nextY) in self.spaces:
+                if self.spaces[(x+1, nextY)].color != piece.color:
+                    moves.append((x+1, nextY))
             
-            #TODO: check for en passant
+            #check for en passant
+            if (piece.ep_pos != (-1, -1)):
+                moves.append(piece.ep_pos)
         elif (piece.type == PieceType.ROOK):
             # check in all four cardinal directions
             for nextX in range(x+1, self.max_x+1):
@@ -225,42 +258,43 @@ class Board:
                 else: #not occupied
                     moves.append(move)
         elif (piece.type == PieceType.BISHOP):
+            print ("Checking moves for bishop")
             #check all four diagonals
             step = 1
-            while (x+step < self.max_x & y+step < self.max_y):
-                newPos = (x+step, y+step)
-                if newPos in self.spaces:
-                    if self.spaces[newPos].color != piece.color: #enemy
-                        moves.append(newPos)
+            while (x+step < self.max_x) & (y+step < self.max_y):
+                nextPos = (x+step, y+step)
+                if nextPos in self.spaces:
+                    if self.spaces[nextPos].color != piece.color: #enemy
+                        moves.append(nextPos)
                     break
-                moves.append(newPos)
+                moves.append(nextPos)
                 step += 1
             step = 1
-            while (x+step < self.max_x & y-step >= 0):
-                newPos = (x+step, y-step)
-                if newPos in self.spaces:
-                    if self.spaces[newPos].color != piece.color: #enemy
-                        moves.append(newPos)
+            while (x+step < self.max_x) & (y-step > 0):
+                nextPos = (x+step, y-step)
+                if nextPos in self.spaces:
+                    if self.spaces[nextPos].color != piece.color: #enemy
+                        moves.append(nextPos)
                     break
-                moves.append(newPos)
+                moves.append(nextPos)
                 step += 1
             step = 1
-            while (x-step >= 0 & y+step < self.max_y):
-                newPos = (x-step, y+step)
-                if newPos in self.spaces:
-                    if self.spaces[newPos].color != piece.color: #enemy
-                        moves.append(newPos)
+            while (x-step > 0) & (y+step < self.max_y):
+                nextPos = (x-step, y+step)
+                if nextPos in self.spaces:
+                    if self.spaces[nextPos].color != piece.color: #enemy
+                        moves.append(nextPos)
                     break
-                moves.append(newPos)
+                moves.append(nextPos)
                 step += 1
             step = 1
-            while (x-step >= 0 & y-step >= 0):
-                newPos = (x-step, y-step)
-                if newPos in self.spaces:
-                    if self.spaces[newPos].color != piece.color: #enemy
-                        moves.append(newPos)
+            while (x-step > 0) & (y-step > 0):
+                nextPos = (x-step, y-step)
+                if nextPos in self.spaces:
+                    if self.spaces[nextPos].color != piece.color: #enemy
+                        moves.append(nextPos)
                     break
-                moves.append(newPos)
+                moves.append(nextPos)
                 step += 1
         elif (piece.type == PieceType.QUEEN):
             #horizontals/verticals
@@ -295,58 +329,57 @@ class Board:
             
             #diagonals
             step = 1
-            while (x+step < self.max_x & y+step < self.max_y):
-                newPos = (x+step, y+step)
-                if newPos in self.spaces:
-                    if self.spaces[newPos].color != piece.color: #enemy
-                        moves.append(newPos)
+            while (x+step < self.max_x) & (y+step < self.max_y):
+                nextPos = (x+step, y+step)
+                if nextPos in self.spaces:
+                    if self.spaces[nextPos].color != piece.color: #enemy
+                        moves.append(nextPos)
                     break
-                moves.append(newPos)
+                moves.append(nextPos)
                 step += 1
             step = 1
-            while (x+step < self.max_x & y-step >= 0):
-                newPos = (x+step, y-step)
-                if newPos in self.spaces:
-                    if self.spaces[newPos].color != piece.color: #enemy
-                        moves.append(newPos)
+            while (x+step < self.max_x) & (y-step > 0):
+                nextPos = (x+step, y-step)
+                if nextPos in self.spaces:
+                    if self.spaces[nextPos].color != piece.color: #enemy
+                        moves.append(nextPos)
                     break
-                moves.append(newPos)
+                moves.append(nextPos)
                 step += 1
             step = 1
-            while (x-step >= 0 & y+step < self.max_y):
-                newPos = (x-step, y+step)
-                if newPos in self.spaces:
-                    if self.spaces[newPos].color != piece.color: #enemy
-                        moves.append(newPos)
+            while (x-step > 0) & (y+step < self.max_y):
+                nextPos = (x-step, y+step)
+                if nextPos in self.spaces:
+                    if self.spaces[nextPos].color != piece.color: #enemy
+                        moves.append(nextPos)
                     break
-                moves.append(newPos)
+                moves.append(nextPos)
                 step += 1
             step = 1
-            while (x-step >= 0 & y-step >= 0):
-                newPos = (x-step, y-step)
-                if newPos in self.spaces:
-                    if self.spaces[newPos].color != piece.color: #enemy
-                        moves.append(newPos)
+            while (x-step > 0) & (y-step > 0):
+                nextPos = (x-step, y-step)
+                if nextPos in self.spaces:
+                    if self.spaces[nextPos].color != piece.color: #enemy
+                        moves.append(nextPos)
                     break
-                moves.append(newPos)
+                moves.append(nextPos)
                 step += 1
         elif (piece.type == PieceType.KING):
             potentialMoves = [(x+1, y), (x+1, y+1), (x, y+1), (x-1, y+1), (x-1, y), (x-1, y-1), (x, y-1), (x+1, y-1)]
             for move in potentialMoves:
                 # make sure move is inside board
-                if (x <= 0 | x > self.max_x | y <= 0 | y > self.max_y):
+                if (move[0] < 0) | (move[0] > self.max_x) | (move[1] < 0) | (move[1] > self.max_y):
                     continue
+                # check if space is occupied by a friendly piece
+                if move in self.spaces:
+                    if self.spaces[move].color == piece.color:
+                        continue
                 # check if space is threatened
                 # cannot move there if so, would put king in check
-                if (self.isThreatened(x, y, piece.color)):
+                print ("Checking if " + str(move) + " is threatened")
+                if self.isThreatened(move[0], move[1], piece.color):
                     continue
-                # check if space is occupied
-                if move in self.spaces: #is occupied
-                    #check if occupied by friend or foe
-                    if self.spaces[move].color != piece.color:
-                        moves.append(move) #this will capture the piece
-                else: #not occupied
-                    moves.append(move)
+                moves.append(move)
         
         return moves
 
@@ -381,8 +414,13 @@ class Board:
     # draw the board using tkinter
     # TODO: change colors
     def drawBoard (self, root, canvas):
-        # create a button for every square on the board
+        squaresToHighlight = []
+        if (self.selected_square != (-1, -1)):
+            squaresToHighlight = self.getMoves(self.selected_square)
         light_square = True
+        # clear the canvas
+        canvas.delete("all")
+        # create a button for every square on the board
         for i in range(0, 512, 64):
             for j in range(0, 512, 64):
                 # positioning variables
@@ -396,10 +434,8 @@ class Board:
                 if (light_square): bgColor = Board.LIGHT_SQUARE_COLOR
                 else: bgColor = Board.DARK_SQUARE_COLOR
                 if (self.selected_square == (a, b)): bgColor = Board.SELECTED_SQUARE_COLOR
-                if (self.selected_square != (-1, -1)):
-                    squaresToHighlight = self.getMoves(self.selected_square)
-                    if (a, b) in squaresToHighlight:
-                        bgColor = Board.NORMAL_MOVE_COLOR
+                if (a, b) in squaresToHighlight:
+                    bgColor = Board.NORMAL_MOVE_COLOR
 
                 # create button
                 button: tk.Button
@@ -426,6 +462,7 @@ class Board:
     # for spaces with friendly pieces, select that piece and show its moves
     # click again to deselect, or click one of those spaces to make the move
     def handleClick (self, root, canvas):
+        #print ("Click!")
         # determine which button was clicked based on cursor position
         x = (root.winfo_pointerx() - root.winfo_rootx() - self.pos[0]) // 64 + 1
         y = (root.winfo_pointery() - root.winfo_rooty() - self.pos[1]) // 64 + 1
@@ -441,6 +478,13 @@ class Board:
                 moves = self.getMoves(self.selected_square)
                 if clickPos in moves:
                     self.movePiece(self.selected_square, clickPos)
+                    self.selected_square = (-1, -1)
+                    self.drawBoard(root, canvas)
+                    return
+            prevPos = self.selected_square
             self.selected_square = (-1, -1) #deselect
+            if clickPos in self.spaces:
+                if (self.spaces[clickPos].color == self.curr_player) & (clickPos != prevPos): #if clicking on a different friendly piece, select
+                    self.selected_square = clickPos
             self.drawBoard(root, canvas)
             

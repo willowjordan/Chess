@@ -22,6 +22,7 @@ class Piece:
         self.type = type
         self.color = color
         self.has_moved = False # this will be used for en passant, double pawn moves, and castling
+        self.ep_pos = (-1, -1) # if the piece is a pawn and is able to en passant, it can do so to the piece at this location. otherwise, this var will be (-1, -1)
         
         # create image for piece (this will hopefully avoid garbage collection problems)
         color_string = str(self.color)[6:].lower()

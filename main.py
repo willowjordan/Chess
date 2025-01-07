@@ -1,13 +1,10 @@
 '''
 TO DO:
-    - Fix circular import issue
-    - Finish pieces' move functions
+    - Find a way to delete unused objects from the canvas
     - Implement king check/checkmate detection
     - Implement castling
-    - Add visual representation (tkinter)
     - Implement promotion
-    - Implement pawn capture recognition
-    - Implement en passant
+    - Implement turns
 '''
 
 from board import *
