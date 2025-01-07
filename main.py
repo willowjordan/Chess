@@ -1,6 +1,8 @@
 '''
 TO DO:
     - Find a way to delete unused objects from the canvas
+    - Update isThreatened() to include threats from enemy kings
+    - Make it so when a player is in check, they can only make moves to get out of chess
     - Implement king check/checkmate detection
     - Implement castling
     - Implement promotion
@@ -16,17 +18,10 @@ def foo ():
     print("bar")
 
 root = tk.Tk()
-canvas = tk.Canvas(root, width=128*6, height=128*6)
-canvas.pack()
+boardCanvas = tk.Canvas(root, width=128*6, height=128*6)
+boardCanvas.pack()
 
-board = Board((10, 10))
-board.initialize()
-board.drawBoard(root, canvas)
+board = Board((10, 10), root, boardCanvas)
+board.initialize() # this will start the game
 
-'''bgImage = ImageTk.PhotoImage(Image.open("./sprites/black_rook.png"))
-#button = tk.Button(root, command= lambda: self.handleClick(a, b), image=bgImage)
-button = tk.Button(root, command=foo, text="", image=bgImage)
-button.configure(background="#e2d2a1")
-button_window = canvas.create_window(10, 10, width=64, height=64, anchor=tk.NW, window=button)'''
-
-root.mainloop()
+boardCanvas.mainloop()

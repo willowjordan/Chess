@@ -17,10 +17,11 @@ class PieceType(Enum):
     KING = 6
 
 class Piece:
-    def __init__(self, id, type, color):
+    def __init__(self, id, type, color, pos):
         self.id = id
         self.type = type
         self.color = color
+        self.pos = pos
         self.has_moved = False # this will be used for en passant, double pawn moves, and castling
         self.ep_pos = (-1, -1) # if the piece is a pawn and is able to en passant, it can do so to the piece at this location. otherwise, this var will be (-1, -1)
         

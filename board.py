@@ -5,6 +5,12 @@ import tkinter as tk
 NOTES:
     - Starting board position is (1, 1) in the top left, going to (8, 8) in the bottom right
 '''
+class GameState(Enum):
+    NORMAL = 0
+    CHECK = 1
+    CHECKMATE = 2
+    STALEMATE = 3
+
 class Board:
     LIGHT_SQUARE_COLOR = "#e2d2a1"
     DARK_SQUARE_COLOR = "#ae9f70"
@@ -14,7 +20,7 @@ class Board:
     SPECIAL_MOVE_COLOR = "#b465e5"
 
     # pos = (x, y) coordinates for the top left corner of the board to be drawn at
-    def __init__ (self, pos):
+    def __init__ (self, pos, root, canvas):
         self.spaces:dict = {} # this is the board itself
         self.whiteAlive:dict = {}
         self.whiteDead:dict = {}
@@ -24,14 +30,17 @@ class Board:
         self.max_y = 8
         self.piecesCreated = 0
         self.pos = pos
+        self.root = root
+        self.canvas = canvas
         self.buttons = []
         self.curr_player = Color.WHITE # whose turn it is
         self.selected_square = (-1, -1) # the square of the piece currently selected by the player, (-1, -1) if no piece selected
         self.ep_clear_list = [] # list of en passant values to reset at the end of the turn
+        self.game_state = GameState.NORMAL
 
     # create a new piece and insert it onto the board
     def createPiece (self, type, color, x, y):
-        piece = Piece(self.piecesCreated+1, type, color)
+        piece = Piece(self.piecesCreated+1, type, color, (x, y))
         self.piecesCreated += 1
         #maybe add error checking to make sure pieces aren't replaced?
         self.spaces[(x, y)] = piece
@@ -66,19 +75,32 @@ class Board:
 
         # update info about moving piece as necessary
         movingPiece.has_moved = True
+        movingPiece.pos = endPos
+
+        if (movingPiece.type == PieceType.PAWN):
+            # check if this was an en passant move
+            multiplier:int
+            if (movingPiece.color == Color.WHITE): multiplier = 1
+            else: multiplier = -1
+            capPos = (endPos[0], endPos[1]+multiplier)
+            if (movingPiece.ep_pos == capPos):
+                self.removePiece(capPos)
+            
+            # for pawns, check to see if neighboring pawns can en passant
+            if (abs(startPos[1]-endPos[1]) == 2): # two square move
+                leftPos = (endPos[0]-1, endPos[1])
+                rightPos = (endPos[0]+1, endPos[1])
+                if leftPos in self.spaces:
+                    if self.spaces[leftPos].color != movingPiece.color:
+                        self.spaces[leftPos].ep_pos = endPos
+                        self.ep_clear_list.append(self.spaces[leftPos])
+                if rightPos in self.spaces:
+                    if self.spaces[rightPos].color != movingPiece.color:
+                        self.spaces[rightPos].ep_pos = endPos
+                        self.ep_clear_list.append(self.spaces[rightPos])
         
-        # for pawns, check for en passant
-        if (movingPiece.type == PieceType.PAWN) & (abs(startPos[1]-endPos[1]) == 2): # two square move
-            leftPos = (endPos[0]-1, endPos[1])
-            rightPos = (endPos[0]+1, endPos[1])
-            if leftPos in self.spaces:
-                if self.spaces[leftPos].color != movingPiece.color:
-                    self.spaces[leftPos].ep_pos = endPos
-                    self.ep_clear_list.append(leftPos)
-            if rightPos in self.spaces:
-                if self.spaces[rightPos].color != movingPiece.color:
-                    self.spaces[rightPos].ep_pos = endPos
-                    self.ep_clear_list.append(rightPos)
+        # handle end of turn stuff
+        self.changeTurns()
 
     # for better clarity
     def getPiece (self, x, y):
@@ -134,7 +156,6 @@ class Board:
         while (x+step < self.max_x) & (y+step < self.max_y):
             nextPos = (x+step, y+step)
             if nextPos in self.spaces:
-                print("Piece at " + str(nextPos) + ": " + str(self.spaces[nextPos]))
                 if (self.spaces[nextPos].color != color) & ((self.spaces[nextPos].type == PieceType.BISHOP) | (self.spaces[nextPos].type == PieceType.QUEEN)):
                     return True
                 break
@@ -143,7 +164,6 @@ class Board:
         while (x+step < self.max_x) & (y-step > 0):
             nextPos = (x+step, y-step)
             if nextPos in self.spaces:
-                print("Piece at " + str(nextPos) + ": " + str(self.spaces[nextPos]))
                 if (self.spaces[nextPos].color != color) & ((self.spaces[nextPos].type == PieceType.BISHOP) | (self.spaces[nextPos].type == PieceType.QUEEN)):
                     return True
                 break
@@ -152,7 +172,6 @@ class Board:
         while (x-step > 0) & (y+step < self.max_y):
             nextPos = (x-step, y+step)
             if nextPos in self.spaces:
-                print("Piece at " + str(nextPos) + ": " + str(self.spaces[nextPos]))
                 if (self.spaces[nextPos].color != color) & ((self.spaces[nextPos].type == PieceType.BISHOP) | (self.spaces[nextPos].type == PieceType.QUEEN)):
                     return True
                 break
@@ -161,7 +180,6 @@ class Board:
         while (x-step > 0) & (y-step > 0):
             nextPos = (x-step, y-step)
             if nextPos in self.spaces:
-                print("Piece at " + str(nextPos) + ": " + str(self.spaces[nextPos]))
                 if (self.spaces[nextPos].color != color) & ((self.spaces[nextPos].type == PieceType.BISHOP) | (self.spaces[nextPos].type == PieceType.QUEEN)):
                     return True
                 break
@@ -213,7 +231,8 @@ class Board:
             
             #check for en passant
             if (piece.ep_pos != (-1, -1)):
-                moves.append(piece.ep_pos)
+                new_pos = (piece.ep_pos[0], piece.ep_pos[1]+multiplier)
+                moves.append(new_pos)
         elif (piece.type == PieceType.ROOK):
             # check in all four cardinal directions
             for nextX in range(x+1, self.max_x+1):
@@ -258,7 +277,6 @@ class Board:
                 else: #not occupied
                     moves.append(move)
         elif (piece.type == PieceType.BISHOP):
-            print ("Checking moves for bishop")
             #check all four diagonals
             step = 1
             while (x+step < self.max_x) & (y+step < self.max_y):
@@ -376,14 +394,13 @@ class Board:
                         continue
                 # check if space is threatened
                 # cannot move there if so, would put king in check
-                print ("Checking if " + str(move) + " is threatened")
                 if self.isThreatened(move[0], move[1], piece.color):
                     continue
                 moves.append(move)
         
         return moves
 
-    # set up the board in default configuration   
+    # set up the board in default configuration and start the game
     def initialize (self):
         #pawns
         for x in range(1, 9):
@@ -411,15 +428,16 @@ class Board:
         self.createPiece(PieceType.KING, Color.WHITE, 5, 8)
         self.createPiece(PieceType.KING, Color.BLACK, 5, 1)
 
+        self.drawBoard()
+
     # draw the board using tkinter
-    # TODO: change colors
-    def drawBoard (self, root, canvas):
+    def drawBoard (self):
         squaresToHighlight = []
         if (self.selected_square != (-1, -1)):
             squaresToHighlight = self.getMoves(self.selected_square)
         light_square = True
         # clear the canvas
-        canvas.delete("all")
+        self.canvas.delete("all")
         # create a button for every square on the board
         for i in range(0, 512, 64):
             for j in range(0, 512, 64):
@@ -441,13 +459,13 @@ class Board:
                 button: tk.Button
                 if (a, b) in self.spaces:
                     img = self.spaces[(a, b)].img
-                    button = tk.Button(root, width=a, height=b, command= lambda: self.handleClick(root, canvas), text="", image=img)
+                    button = tk.Button(self.root, width=a, height=b, command=self.handleClick, text="", image=img)
                 else:
-                    button = tk.Button(root, width=a, height=b, command= lambda: self.handleClick(root, canvas), text="")
+                    button = tk.Button(self.root, width=a, height=b, command=self.handleClick, text="")
                 
                 # place button
                 button.configure(background=bgColor)
-                button_window = canvas.create_window(x, y, width=64, height=64, anchor=tk.NW, window=button)
+                button_window = self.canvas.create_window(x, y, width=64, height=64, anchor=tk.NW, window=button)
 
                 # flip square color
                 light_square = not light_square
@@ -461,30 +479,83 @@ class Board:
     # handle the square at (x, y) being clicked
     # for spaces with friendly pieces, select that piece and show its moves
     # click again to deselect, or click one of those spaces to make the move
-    def handleClick (self, root, canvas):
+    def handleClick (self):
         #print ("Click!")
         # determine which button was clicked based on cursor position
-        x = (root.winfo_pointerx() - root.winfo_rootx() - self.pos[0]) // 64 + 1
-        y = (root.winfo_pointery() - root.winfo_rooty() - self.pos[1]) // 64 + 1
+        x = (self.root.winfo_pointerx() - self.root.winfo_rootx() - self.pos[0]) // 64 + 1
+        y = (self.root.winfo_pointery() - self.root.winfo_rooty() - self.pos[1]) // 64 + 1
         clickPos = (x, y)
         
         if (self.selected_square == (-1, -1)): # no square selected
             if (clickPos in self.spaces):
                 if (self.curr_player == self.spaces[clickPos].color): #space occupied by friendly piece
                     self.selected_square = clickPos
-                    self.drawBoard(root, canvas) #redraw board to show changes
+                    self.drawBoard() #redraw board to show changes
         else: #square selected
             if (self.selected_square in self.spaces):
                 moves = self.getMoves(self.selected_square)
                 if clickPos in moves:
                     self.movePiece(self.selected_square, clickPos)
                     self.selected_square = (-1, -1)
-                    self.drawBoard(root, canvas)
+                    self.drawBoard()
                     return
             prevPos = self.selected_square
             self.selected_square = (-1, -1) #deselect
             if clickPos in self.spaces:
                 if (self.spaces[clickPos].color == self.curr_player) & (clickPos != prevPos): #if clicking on a different friendly piece, select
                     self.selected_square = clickPos
-            self.drawBoard(root, canvas)
-            
+            self.drawBoard()
+
+    # return true if there is a stalemate on current player's turn
+    def checkForStalemate (self):
+        pieces = []
+        if self.curr_player == Color.WHITE: pieces = self.whiteAlive
+        else: pieces = self.blackAlive
+        for pc in pieces.values():
+            moves = self.getMoves(pc.pos)
+            if len(moves) > 0: return False
+        return True
+
+    
+    # take all end-of-turn actions, switch players, and take all beginning of turn actions for the next player
+    # return end of game scenarios if necessary
+    def changeTurns (self):
+        # end of turn actions
+        pieceToClear = ()
+        for piece in self.ep_clear_list:
+            # only clear en passant counters for pieces of the current color
+            if (piece.color == self.curr_player):
+                piece.ep_pos = (-1, -1)
+                pieceToClear = piece
+        if pieceToClear != ():
+            self.ep_clear_list.remove(pieceToClear)
+        self.check = False
+        
+        # change sides
+        piecesAlive = []
+        if (self.curr_player == Color.WHITE):
+            self.curr_player = Color.BLACK
+            piecesAlive = self.blackAlive
+        else:
+            self.curr_player = Color.WHITE
+            piecesAlive = self.whiteAlive
+
+        # beginning of turn actions
+        # check for check/checkmate
+        king: Piece
+        for piece in piecesAlive.values():
+            if piece.type == PieceType.KING:
+                king = piece
+                break
+        if self.isThreatened(king.pos[0], king.pos[1], self.curr_player):
+            self.check = True
+            moves = self.getMoves(king.pos[0], king.pos[1])
+            if len(moves) == 0:
+                self.game_state = GameState.CHECKMATE
+                self.canvas.destroy()
+                
+        else: # not in check
+            # check for stalemate
+            if (self.checkForStalemate()):
+                self.game_state = GameState.STALEMATE
+                self.canvas.destroy()
