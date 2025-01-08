@@ -164,7 +164,8 @@ class Board:
                         colNum += 1
                         continue
 
-                    self.createPiece(ptype, color, rowNum, colNum)
+                    self.createPiece(ptype, color, colNum, rowNum)
+                    colNum += 1
                 rowNum += 1
 
         if draw: self.drawBoard()
@@ -315,7 +316,7 @@ class Board:
                         moves.append(nextPos)
                     break
                 moves.append(nextPos)
-            for nextX in range(x-1, -1, -1):
+            for nextX in range(x-1, 0, -1):
                 nextPos = (nextX, y)
                 if nextPos in self.spaces: #occupied
                     if self.spaces[nextPos].color != piece.color: #enemy
@@ -329,7 +330,7 @@ class Board:
                         moves.append(nextPos)
                     break
                 moves.append(nextPos)
-            for nextY in range(y-1, -1, -1):
+            for nextY in range(y-1, 0, -1):
                 nextPos = (x, nextY)
                 if nextPos in self.spaces: #occupied
                     if self.spaces[nextPos].color != piece.color: #enemy
@@ -340,7 +341,7 @@ class Board:
             potentialMoves = [(x+2, y-1), (x+2, y+1), (x-2, y-1), (x-2, y+1), (x-1, y+2), (x+1, y+2), (x-1, y-2), (x+1, y-2)]
             for move in potentialMoves:
                 # make sure move is inside board
-                if (x <= 0 | x > self.max_x | y <= 0 | y > self.max_y):
+                if (move[0] <= 0) | (move[0] > self.max_x) | (move[1] <= 0) | (move[1] > self.max_y):
                     continue
                 # check if space is occupied
                 if move in self.spaces: #is occupied
