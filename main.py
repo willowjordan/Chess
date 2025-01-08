@@ -1,5 +1,7 @@
 '''
 TO DO:
+    - Make code more testable
+    - Write a testing script and run unit tests
     - Find a way to delete unused objects from the canvas
     - Update isThreatened() to include threats from enemy kings
     - Make it so when a player is in check, they can only make moves to get out of chess
@@ -13,9 +15,6 @@ from board import *
 
 import tkinter as tk
 import time
-
-def foo ():
-    print("bar")
 
 root = tk.Tk()
 boardCanvas = tk.Canvas(root, width=128*6, height=128*6)

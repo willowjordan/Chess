@@ -1,5 +1,6 @@
 from piece import *
 import tkinter as tk
+import copy
 
 '''
 NOTES:
@@ -32,7 +33,6 @@ class Board:
         self.pos = pos
         self.root = root
         self.canvas = canvas
-        self.buttons = []
         self.curr_player = Color.WHITE # whose turn it is
         self.selected_square = (-1, -1) # the square of the piece currently selected by the player, (-1, -1) if no piece selected
         self.ep_clear_list = [] # list of en passant values to reset at the end of the turn
@@ -64,7 +64,8 @@ class Board:
     # move piece from starting point to ending point
     # if there is another piece occupying that space, remove (take) that piece
     # startPos and endPos are tuples representing (x, y) coordinates
-    def movePiece (self, startPos, endPos):
+    # if display is set to false, do not call changeTurns (use this for manipulating hypothetical boards)
+    def movePiece (self, startPos, endPos, display = True):
         movingPiece = self.spaces[startPos]
         # check if there's a piece occupying the spot to be moved to
         # if so, take it
@@ -100,15 +101,87 @@ class Board:
                         self.ep_clear_list.append(self.spaces[rightPos])
         
         # handle end of turn stuff
-        self.changeTurns()
-
-    # for better clarity
-    def getPiece (self, x, y):
-        return self.spaces[(x, y)]
+        if display: self.changeTurns()
     
-    # return true if a piece of *color* in space x, y could be taken by a piece of the opposing color
+    # set up the board in default configuration and start the game
+    # optionally, pass an array of eight strings as "setup" for a custom setup
+    # each string should be 16 characters long
+    # a piece is represented by a two character sequence representing color and type
+    # use W for white and B for black, X for blank space
+    # use P for pawn, R for rook, N for knight, B for bishop, Q for queen, K for king, and X for blank space
+    # optionally, set draw to false to prevent drawing the board
+    def initialize (self, setup = [], draw = True):
+        if setup == []:
+            #pawns
+            for x in range(1, 9):
+                self.createPiece(PieceType.PAWN, Color.WHITE, x, 7)
+                self.createPiece(PieceType.PAWN, Color.BLACK, x, 2)
+            #rooks
+            self.createPiece(PieceType.ROOK, Color.WHITE, 1, 8)
+            self.createPiece(PieceType.ROOK, Color.WHITE, 8, 8)
+            self.createPiece(PieceType.ROOK, Color.BLACK, 1, 1)
+            self.createPiece(PieceType.ROOK, Color.BLACK, 8, 1)
+            #knights
+            self.createPiece(PieceType.KNIGHT, Color.WHITE, 2, 8)
+            self.createPiece(PieceType.KNIGHT, Color.WHITE, 7, 8)
+            self.createPiece(PieceType.KNIGHT, Color.BLACK, 2, 1)
+            self.createPiece(PieceType.KNIGHT, Color.BLACK, 7, 1)
+            #bishops
+            self.createPiece(PieceType.BISHOP, Color.WHITE, 3, 8)
+            self.createPiece(PieceType.BISHOP, Color.WHITE, 6, 8)
+            self.createPiece(PieceType.BISHOP, Color.BLACK, 3, 1)
+            self.createPiece(PieceType.BISHOP, Color.BLACK, 6, 1)
+            #queens
+            self.createPiece(PieceType.QUEEN, Color.WHITE, 4, 8)
+            self.createPiece(PieceType.QUEEN, Color.BLACK, 4, 1)
+            #kings
+            self.createPiece(PieceType.KING, Color.WHITE, 5, 8)
+            self.createPiece(PieceType.KING, Color.BLACK, 5, 1)
+        else: #custom setup
+            rowNum = 1
+            for rowStr in setup:
+                colNum = 1
+                for j in range(0, 15, 2):
+                    if j+2 > len(rowStr): break # if string is shorter than expected
+                    colorStr = rowStr[j]
+                    typeStr = rowStr[j+1]
+                    color:Color
+                    ptype:PieceType
+
+                    if colorStr == "W": color = Color.WHITE
+                    elif colorStr == "B": color = Color.BLACK
+                    elif colorStr == "X": 
+                        colNum += 1
+                        continue
+                    
+                    if typeStr == "P": ptype = PieceType.PAWN
+                    elif typeStr == "R": ptype = PieceType.ROOK
+                    elif typeStr == "N": ptype = PieceType.KNIGHT
+                    elif typeStr == "B": ptype = PieceType.BISHOP
+                    elif typeStr == "Q": ptype = PieceType.QUEEN
+                    elif typeStr == "K": ptype = PieceType.KING
+                    elif typeStr == "X": 
+                        colNum += 1
+                        continue
+
+                    self.createPiece(ptype, color, rowNum, colNum)
+                rowNum += 1
+
+        if draw: self.drawBoard()
+
+    def getKing (self, color):
+        pieces = []
+        if color == Color.WHITE: pieces = self.whiteAlive
+        else: pieces = self.blackAlive
+        for pc in pieces.values():
+            if pc.type == PieceType.KING:
+                return pc
+    
+    # return true if a piece of *color* in space pos could be taken by a piece of the opposing color
     # this is specifically for the king being in check, so things like en passant will be ignored
-    def isThreatened (self, x, y, color):
+    def isThreatened (self, pos, color):
+        x = pos[0]
+        y = pos[1]
         # check for pawns
         multiplier:int
         if (color == Color.WHITE):
@@ -153,7 +226,7 @@ class Board:
 
         # check diagonals for bishops/queens
         step = 1
-        while (x+step < self.max_x) & (y+step < self.max_y):
+        while (x+step <= self.max_x) & (y+step <= self.max_y):
             nextPos = (x+step, y+step)
             if nextPos in self.spaces:
                 if (self.spaces[nextPos].color != color) & ((self.spaces[nextPos].type == PieceType.BISHOP) | (self.spaces[nextPos].type == PieceType.QUEEN)):
@@ -161,7 +234,7 @@ class Board:
                 break
             step += 1
         step = 1
-        while (x+step < self.max_x) & (y-step > 0):
+        while (x+step <= self.max_x) & (y-step > 0):
             nextPos = (x+step, y-step)
             if nextPos in self.spaces:
                 if (self.spaces[nextPos].color != color) & ((self.spaces[nextPos].type == PieceType.BISHOP) | (self.spaces[nextPos].type == PieceType.QUEEN)):
@@ -196,7 +269,7 @@ class Board:
 
         # TODO: check for kings (maybe work in with pawns)
 
-
+    # this function should ONLY be used for pieces of the player whose turn it is
     def getMoves (self, pos):
         x = pos[0]
         y = pos[1]
@@ -279,7 +352,7 @@ class Board:
         elif (piece.type == PieceType.BISHOP):
             #check all four diagonals
             step = 1
-            while (x+step < self.max_x) & (y+step < self.max_y):
+            while (x+step <= self.max_x) & (y+step <= self.max_y):
                 nextPos = (x+step, y+step)
                 if nextPos in self.spaces:
                     if self.spaces[nextPos].color != piece.color: #enemy
@@ -288,7 +361,7 @@ class Board:
                 moves.append(nextPos)
                 step += 1
             step = 1
-            while (x+step < self.max_x) & (y-step > 0):
+            while (x+step <= self.max_x) & (y-step > 0):
                 nextPos = (x+step, y-step)
                 if nextPos in self.spaces:
                     if self.spaces[nextPos].color != piece.color: #enemy
@@ -347,7 +420,7 @@ class Board:
             
             #diagonals
             step = 1
-            while (x+step < self.max_x) & (y+step < self.max_y):
+            while (x+step <= self.max_x) & (y+step <= self.max_y):
                 nextPos = (x+step, y+step)
                 if nextPos in self.spaces:
                     if self.spaces[nextPos].color != piece.color: #enemy
@@ -356,7 +429,7 @@ class Board:
                 moves.append(nextPos)
                 step += 1
             step = 1
-            while (x+step < self.max_x) & (y-step > 0):
+            while (x+step <= self.max_x) & (y-step > 0):
                 nextPos = (x+step, y-step)
                 if nextPos in self.spaces:
                     if self.spaces[nextPos].color != piece.color: #enemy
@@ -394,44 +467,40 @@ class Board:
                         continue
                 # check if space is threatened
                 # cannot move there if so, would put king in check
-                if self.isThreatened(move[0], move[1], piece.color):
+                if self.isThreatened(move, piece.color):
                     continue
                 moves.append(move)
         
+        # if currently in check, remove any move which doesn't take the player out of check
+        if self.game_state == GameState.CHECK:
+            movesToRemove = []
+            for move in moves:
+                newboard = copy.deepcopy(self)
+                newboard.movePiece(pos, move)
+                if newboard.isThreatened(newboard.getKing().pos):
+                    movesToRemove.append(move)
+            for move in movesToRemove:
+                moves.remove(move)   
+
         return moves
-
-    # set up the board in default configuration and start the game
-    def initialize (self):
-        #pawns
-        for x in range(1, 9):
-            self.createPiece(PieceType.PAWN, Color.WHITE, x, 7)
-            self.createPiece(PieceType.PAWN, Color.BLACK, x, 2)
-        #rooks
-        self.createPiece(PieceType.ROOK, Color.WHITE, 1, 8)
-        self.createPiece(PieceType.ROOK, Color.WHITE, 8, 8)
-        self.createPiece(PieceType.ROOK, Color.BLACK, 1, 1)
-        self.createPiece(PieceType.ROOK, Color.BLACK, 8, 1)
-        #knights
-        self.createPiece(PieceType.KNIGHT, Color.WHITE, 2, 8)
-        self.createPiece(PieceType.KNIGHT, Color.WHITE, 7, 8)
-        self.createPiece(PieceType.KNIGHT, Color.BLACK, 2, 1)
-        self.createPiece(PieceType.KNIGHT, Color.BLACK, 7, 1)
-        #bishops
-        self.createPiece(PieceType.BISHOP, Color.WHITE, 3, 8)
-        self.createPiece(PieceType.BISHOP, Color.WHITE, 6, 8)
-        self.createPiece(PieceType.BISHOP, Color.BLACK, 3, 1)
-        self.createPiece(PieceType.BISHOP, Color.BLACK, 6, 1)
-        #queens
-        self.createPiece(PieceType.QUEEN, Color.WHITE, 4, 8)
-        self.createPiece(PieceType.QUEEN, Color.BLACK, 4, 1)
-        #kings
-        self.createPiece(PieceType.KING, Color.WHITE, 5, 8)
-        self.createPiece(PieceType.KING, Color.BLACK, 5, 1)
-
-        self.drawBoard()
+    
+    # get all moves for the current player
+    def getAllMoves (self):
+        moves = []
+        pieces = []
+        if self.curr_player == Color.WHITE: pieces = self.whiteAlive
+        else: pieces = self.blackAlive
+        for pc in pieces.values():
+            for mv in self.getMoves(pc.pos):
+                moves.append((pc.pos, mv))
+        
+        return moves
 
     # draw the board using tkinter
     def drawBoard (self):
+        mv = self.getAllMoves()
+        print(mv) #DEBUG
+
         squaresToHighlight = []
         if (self.selected_square != (-1, -1)):
             squaresToHighlight = self.getMoves(self.selected_square)
@@ -535,21 +604,15 @@ class Board:
         piecesAlive = []
         if (self.curr_player == Color.WHITE):
             self.curr_player = Color.BLACK
-            piecesAlive = self.blackAlive
         else:
             self.curr_player = Color.WHITE
-            piecesAlive = self.whiteAlive
 
         # beginning of turn actions
         # check for check/checkmate
-        king: Piece
-        for piece in piecesAlive.values():
-            if piece.type == PieceType.KING:
-                king = piece
-                break
-        if self.isThreatened(king.pos[0], king.pos[1], self.curr_player):
+        king = self.getKing(self.curr_player)
+        if self.isThreatened(king.pos, self.curr_player):
             self.check = True
-            moves = self.getMoves(king.pos[0], king.pos[1])
+            moves = self.getMoves(king.pos)
             if len(moves) == 0:
                 self.game_state = GameState.CHECKMATE
                 self.canvas.destroy()
