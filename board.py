@@ -60,6 +60,23 @@ class Board:
         else: #black
             self.blackAlive.pop(piece.id)
             self.blackDead[piece.id] = piece
+    
+    # prompt the player to select which piece to promote the pawn to
+    # then promote the piece without adding to the graveyard
+    def promotePiece (self, pos):
+        piece = self.spaces[pos]
+        selected_type = self.getPromotion()
+        piece.type = selected_type
+        piece.setImage()
+    
+    # prompt the player to select which piece to promote the pawn to
+    def getPromotion (self):
+        selectionWindow = tk.Toplevel(self.root)
+        selectionWindow.title("Select a piece to promote to")
+        selectionWindow.geometry("200x200")
+        #TODO: add buttons and change geometry
+        selectionLabel = tk.Label(selectionWindow, text = "Selection Window")
+        selectionLabel.pack()
 
     # move piece from starting point to ending point
     # if there is another piece occupying that space, remove (take) that piece
@@ -99,10 +116,14 @@ class Board:
                     if self.spaces[rightPos].color != movingPiece.color:
                         self.spaces[rightPos].ep_pos = endPos
                         self.ep_clear_list.append(self.spaces[rightPos])
+            
+            # check for promotion
+            if ((movingPiece.color == Color.WHITE) & (endPos[1] == 1)) | ((movingPiece.color == Color.Black) & (endPos[1] == 8)):
+                self.promotePiece(endPos, display)
         
         # handle end of turn stuff
         if display: self.changeTurns()
-    
+
     # set up the board in default configuration and start the game
     # optionally, pass an array of eight strings as "setup" for a custom setup
     # each string should be 16 characters long
@@ -472,16 +493,15 @@ class Board:
                     continue
                 moves.append(move)
         
-        # if currently in check, remove any move which doesn't take the player out of check
-        if self.game_state == GameState.CHECK:
-            movesToRemove = []
-            for move in moves:
-                newboard = copy.deepcopy(self)
-                newboard.movePiece(pos, move)
-                if newboard.isThreatened(newboard.getKing().pos):
-                    movesToRemove.append(move)
-            for move in movesToRemove:
-                moves.remove(move)   
+        # remove any move which result in king being threatened
+        movesToRemove = []
+        for move in moves:
+            newboard = copy.deepcopy(self)
+            newboard.movePiece(pos, move)
+            if newboard.isThreatened(newboard.getKing().pos):
+                movesToRemove.append(move)
+        for move in movesToRemove:
+            moves.remove(move)   
 
         return moves
     

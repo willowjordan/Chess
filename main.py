@@ -1,7 +1,5 @@
 '''
 TO DO:
-    - Make code more testable
-    - Write a testing script and run unit tests
     - Find a way to delete unused objects from the canvas
     - Update isThreatened() to include threats from enemy kings
     - Make it so when a player is in check, they can only make moves to get out of chess
