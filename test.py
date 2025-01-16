@@ -22,7 +22,6 @@ def assertFunc(func, inputs, output, orderMatters = False, unpack = True):
         realoutput = func(*inputs)
     else:
         realoutput = func(inputs)
-    print (realoutput)
     try:
         assert type(realoutput) == type(output)
         if ((type(output) == list) | (type(output) == tuple)) & (not orderMatters):
@@ -104,11 +103,52 @@ boardCanvas.pack()
 '''initialize'''
 
 '''isThreatened'''
+# pawns
+b_pawn = Board((10, 10), root, boardCanvas)
+pawnsetup = [
+    "",
+    "XXBPXXBPXXXXBPXX",
+    "",
+    "",
+    "",
+    "",
+    "XXWPXXWPXXXXWPXX",
+    ""
+]
+b_pawn.initialize(pawnsetup, False)
+
+assertFunc(b_pawn.isThreatened, [(1, 6), Color.BLACK], True)
+assertFunc(b_pawn.isThreatened, [(2, 6), Color.BLACK], False)
+assertFunc(b_pawn.isThreatened, [(3, 6), Color.BLACK], True)
+assertFunc(b_pawn.isThreatened, [(4, 6), Color.BLACK], False)
+assertFunc(b_pawn.isThreatened, [(5, 6), Color.BLACK], True)
+assertFunc(b_pawn.isThreatened, [(6, 6), Color.BLACK], True)
+assertFunc(b_pawn.isThreatened, [(7, 6), Color.BLACK], False)
+assertFunc(b_pawn.isThreatened, [(8, 6), Color.BLACK], True)
+
+assertFunc(b_pawn.isThreatened, [(1, 2), Color.WHITE], True)
+assertFunc(b_pawn.isThreatened, [(2, 2), Color.WHITE], False)
+assertFunc(b_pawn.isThreatened, [(3, 2), Color.WHITE], True)
+assertFunc(b_pawn.isThreatened, [(4, 2), Color.WHITE], False)
+assertFunc(b_pawn.isThreatened, [(5, 2), Color.WHITE], True)
+assertFunc(b_pawn.isThreatened, [(6, 2), Color.WHITE], True)
+assertFunc(b_pawn.isThreatened, [(7, 2), Color.WHITE], False)
+assertFunc(b_pawn.isThreatened, [(8, 2), Color.WHITE], True)
+
+# rooks
+
+# knights
+
+# bishops
+
+# queens
+
+# kings
 
 '''getMoves'''
 # standard config
 b1 = Board((10, 10), root, boardCanvas)
-b1.initialize([], False)
+b1.initialize(draw=False)
 
 pawnmoves = [(1, 6), (1, 5)]
 rookmoves = []
@@ -117,12 +157,12 @@ bishopmoves = []
 queenmoves = []
 kingmoves = []
 
-assertFunc(b1.getMoves, ((1, 7)), pawnmoves, unpack=False)
-assertFunc(b1.getMoves, ((1, 8)), rookmoves, unpack=False)
-assertFunc(b1.getMoves, ((2, 8)), knightmoves, unpack=False)
-assertFunc(b1.getMoves, ((3, 8)), bishopmoves, unpack=False)
-assertFunc(b1.getMoves, ((4, 8)), queenmoves, unpack=False)
-assertFunc(b1.getMoves, ((5, 8)), kingmoves, unpack=False)
+assertFunc(b1.getMoves, (1, 7), pawnmoves, unpack=False)
+assertFunc(b1.getMoves, (1, 8), rookmoves, unpack=False)
+assertFunc(b1.getMoves, (2, 8), knightmoves, unpack=False)
+assertFunc(b1.getMoves, (3, 8), bishopmoves, unpack=False)
+assertFunc(b1.getMoves, (4, 8), queenmoves, unpack=False)
+assertFunc(b1.getMoves, (5, 8), kingmoves, unpack=False)
 
 # custom config 1
 b2 = Board((10, 10), root, boardCanvas)
@@ -137,7 +177,6 @@ setup = [
     "WRXXXXXXXXWRWKXX",
 ]
 b2.initialize(setup,False)
-print(b2.spaces)
 
 pawnmoves1 = [(2, 5)]
 pawnmoves2 = [(3, 6), (3, 5)]

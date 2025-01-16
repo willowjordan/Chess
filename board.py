@@ -1,6 +1,7 @@
 from piece import *
 import tkinter as tk
 import copy
+from os import walk
 
 '''
 NOTES:
@@ -19,6 +20,7 @@ class Board:
     NORMAL_MOVE_COLOR = "#65a2e5"
     CAPTURE_MOVE_COLOR = "#e56565"
     SPECIAL_MOVE_COLOR = "#b465e5"
+    CHECK_COLOR = ""
 
     # pos = (x, y) coordinates for the top left corner of the board to be drawn at
     def __init__ (self, pos, root, canvas):
@@ -37,6 +39,18 @@ class Board:
         self.selected_square = (-1, -1) # the square of the piece currently selected by the player, (-1, -1) if no piece selected
         self.ep_clear_list = [] # list of en passant values to reset at the end of the turn
         self.game_state = GameState.NORMAL
+
+        # generate images as static object when class is created
+        self.imgs:dict = {}
+        dirpath = "./sprites/"
+        filenames = next(walk(dirpath), (None, None, []))[2]
+        for fname in filenames:
+            key = fname[:len(fname)-4]
+            path = dirpath + fname
+            img = tk.PhotoImage(file=path).zoom(2, 2)
+            self.imgs[key] = img
+        for key in self.imgs.keys():
+            print(key)
 
     # create a new piece and insert it onto the board
     def createPiece (self, type, color, x, y):
@@ -118,7 +132,7 @@ class Board:
                         self.ep_clear_list.append(self.spaces[rightPos])
             
             # check for promotion
-            if ((movingPiece.color == Color.WHITE) & (endPos[1] == 1)) | ((movingPiece.color == Color.Black) & (endPos[1] == 8)):
+            if ((movingPiece.color == Color.WHITE) & (endPos[1] == 1)) | ((movingPiece.color == Color.BLACK) & (endPos[1] == 8)):
                 self.promotePiece(endPos, display)
         
         # handle end of turn stuff
@@ -219,6 +233,15 @@ class Board:
         if nextPos in self.spaces:
             if (self.spaces[nextPos].color != color) & (self.spaces[nextPos].type == PieceType.PAWN):
                 return True
+        
+        # check in a circle around space for kings
+        potentialMoves = [(x+1, y), (x+1, y+1), (x+1, y-1), (x, y+1), (x, y-1), (x-1, y), (x-1, y+1), (x-1, y-1)]
+        for move in potentialMoves:
+            # check if space is occupied
+            if move in self.spaces: #is occupied
+                #check if occupied by friend or foe
+                if (self.spaces[move].color != color) & (self.spaces[move].type == PieceType.KING):
+                    return True
 
         # check horiz/vert for rooks/queens
         for nextX in range(x+1, self.max_x+1):
@@ -289,7 +312,7 @@ class Board:
                 if (self.spaces[move].color != color) & (self.spaces[move].type == PieceType.KNIGHT):
                     return True
 
-        # TODO: check for kings (maybe work in with pawns)
+        return False
 
     # this function should ONLY be used for pieces of the player whose turn it is
     def getMoves (self, pos):
@@ -493,12 +516,12 @@ class Board:
                     continue
                 moves.append(move)
         
-        # remove any move which result in king being threatened
+        # remove any move which results in king being threatened
         movesToRemove = []
         for move in moves:
-            newboard = copy.deepcopy(self)
-            newboard.movePiece(pos, move)
-            if newboard.isThreatened(newboard.getKing().pos):
+            newboard = HypotheticalBoard(self)
+            newboard.movePiece(pos, move, display=False)
+            if newboard.isThreatened(newboard.getKing(self.curr_player).pos, self.curr_player):
                 movesToRemove.append(move)
         for move in movesToRemove:
             moves.remove(move)   
@@ -519,8 +542,7 @@ class Board:
 
     # draw the board using tkinter
     def drawBoard (self):
-        mv = self.getAllMoves()
-        print(mv) #DEBUG
+        #mv = self.getAllMoves()
 
         squaresToHighlight = []
         if (self.selected_square != (-1, -1)):
@@ -548,7 +570,7 @@ class Board:
                 # create button
                 button: tk.Button
                 if (a, b) in self.spaces:
-                    img = self.spaces[(a, b)].img
+                    img = self.getImage(self.spaces[(a, b)])
                     button = tk.Button(self.root, width=a, height=b, command=self.handleClick, text="", image=img)
                 else:
                     button = tk.Button(self.root, width=a, height=b, command=self.handleClick, text="")
@@ -570,7 +592,6 @@ class Board:
     # for spaces with friendly pieces, select that piece and show its moves
     # click again to deselect, or click one of those spaces to make the move
     def handleClick (self):
-        #print ("Click!")
         # determine which button was clicked based on cursor position
         x = (self.root.winfo_pointerx() - self.root.winfo_rootx() - self.pos[0]) // 64 + 1
         y = (self.root.winfo_pointery() - self.root.winfo_rooty() - self.pos[1]) // 64 + 1
@@ -643,3 +664,40 @@ class Board:
             if (self.checkForStalemate()):
                 self.game_state = GameState.STALEMATE
                 self.canvas.destroy()
+    
+    def getImage(self, piece):
+        color_string = str(piece.color)[6:].lower()
+        type_string = str(piece.type)[10:].lower()
+        key = color_string + "_" + type_string
+        img = self.imgs[key]
+        return img
+
+# hypothetical board with no visual representation
+class HypotheticalBoard(Board):
+    def __init__(self):
+        self.spaces:dict = {} # this is the board itself
+        self.whiteAlive:dict = {}
+        self.whiteDead:dict = {}
+        self.blackAlive:dict = {}
+        self.blackDead:dict = {}
+        self.max_x = 8
+        self.max_y = 8
+        self.piecesCreated = 0
+        self.curr_player = Color.WHITE # whose turn it is
+        self.selected_square = (-1, -1) # the square of the piece currently selected by the player, (-1, -1) if no piece selected
+        self.ep_clear_list = [] # list of en passant values to reset at the end of the turn
+        self.game_state = GameState.NORMAL
+
+    def __init__(self, bcopy):
+        self.spaces = copy.deepcopy(bcopy.spaces) # this is the board itself
+        self.whiteAlive = copy.deepcopy(bcopy.whiteAlive)
+        self.whiteDead = copy.deepcopy(bcopy.whiteDead)
+        self.blackAlive = copy.deepcopy(bcopy.blackAlive)
+        self.blackDead = copy.deepcopy(bcopy.blackDead)
+        self.max_x = bcopy.max_x
+        self.max_y = bcopy.max_y
+        self.piecesCreated = bcopy.piecesCreated
+        self.curr_player = bcopy.curr_player # whose turn it is
+        self.selected_square = bcopy.selected_square
+        self.ep_clear_list = copy.deepcopy(bcopy.ep_clear_list) # list of en passant values to reset at the end of the turn
+        self.game_state = bcopy.game_state

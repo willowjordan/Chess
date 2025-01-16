@@ -1,12 +1,11 @@
 '''
 TO DO:
+    - More testing
     - Find a way to delete unused objects from the canvas
-    - Update isThreatened() to include threats from enemy kings
-    - Make it so when a player is in check, they can only make moves to get out of chess
+    - Maybe refactor board.py into Board and MainBoard classes?
     - Implement king check/checkmate detection
     - Implement castling
     - Implement promotion
-    - Implement turns
 '''
 
 from board import *
