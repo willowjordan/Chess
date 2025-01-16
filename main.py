@@ -1,5 +1,6 @@
 '''
 TO DO:
+    - Fix HypotheticalBoard
     - More testing
     - Find a way to delete unused objects from the canvas
     - Maybe refactor board.py into Board and MainBoard classes?

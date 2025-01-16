@@ -1,5 +1,4 @@
 from enum import Enum
-from PIL import ImageTk, Image
 import tkinter as tk
 
 class Color(Enum):

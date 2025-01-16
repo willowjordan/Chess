@@ -32,13 +32,15 @@ class Board:
         self.max_x = 8
         self.max_y = 8
         self.piecesCreated = 0
-        self.pos = pos
-        self.root = root
-        self.canvas = canvas
         self.curr_player = Color.WHITE # whose turn it is
         self.selected_square = (-1, -1) # the square of the piece currently selected by the player, (-1, -1) if no piece selected
         self.ep_clear_list = [] # list of en passant values to reset at the end of the turn
         self.game_state = GameState.NORMAL
+
+        # graphical variables
+        self.pos = pos
+        self.root = root
+        self.canvas = canvas
 
         # generate images as static object when class is created
         self.imgs:dict = {}
