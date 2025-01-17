@@ -33,11 +33,32 @@ def assertFunc(func, inputs, output, orderMatters = False, unpack = True):
         if (orderMatters):
             failStr += " *ORDER MATTERS*"
         print (failStr)
+        print ("Real output was: " + str(realoutput))
         return
     passStr = "Assertion passed: " + func.__name__ + "(" + str(inputs) + ")" + " == " + str(output)
     if (orderMatters):
         passStr += " *ORDER MATTERS*"
     print (passStr)
+
+# posToArrayCoords
+'''assertFunc(Board.posToArrayCoords, (1, 1), (0, 0), unpack=False)
+assertFunc(Board.posToArrayCoords, (2, 1), (0, 2), unpack=False)
+assertFunc(Board.posToArrayCoords, (1, 2), (1, 0), unpack=False)
+assertFunc(Board.posToArrayCoords, (8, 8), (7, 14), unpack=False)'''
+
+# getKing and getKing_slow
+'''testboard = Board()
+testboard.initialize()
+
+start = time.time()
+testboard.getKing("W")
+end = time.time()
+print("getKing took " + str(end-start) + " ms")
+
+start = time.time()
+testboard.getKing_slow("W")
+end = time.time()
+print("getKing_slow took " + str(end-start) + " ms")'''
 
 # testing assertFunc
 '''def foo(input):
@@ -104,7 +125,6 @@ boardCanvas.pack()
 
 '''isThreatened'''
 # pawns
-b_pawn = Board((10, 10), root, boardCanvas)
 pawnsetup = [
     "",
     "XXBPXXBPXXXXBPXX",
@@ -115,25 +135,25 @@ pawnsetup = [
     "XXWPXXWPXXXXWPXX",
     ""
 ]
-b_pawn.initialize(pawnsetup, False)
+b_pawn = Board(pawnsetup)
 
-assertFunc(b_pawn.isThreatened, [(1, 6), Color.BLACK], True)
-assertFunc(b_pawn.isThreatened, [(2, 6), Color.BLACK], False)
-assertFunc(b_pawn.isThreatened, [(3, 6), Color.BLACK], True)
-assertFunc(b_pawn.isThreatened, [(4, 6), Color.BLACK], False)
-assertFunc(b_pawn.isThreatened, [(5, 6), Color.BLACK], True)
-assertFunc(b_pawn.isThreatened, [(6, 6), Color.BLACK], True)
-assertFunc(b_pawn.isThreatened, [(7, 6), Color.BLACK], False)
-assertFunc(b_pawn.isThreatened, [(8, 6), Color.BLACK], True)
+assertFunc(b_pawn.isThreatened, [(1, 6), "B"], True)
+assertFunc(b_pawn.isThreatened, [(2, 6), "B"], False)
+assertFunc(b_pawn.isThreatened, [(3, 6), "B"], True)
+assertFunc(b_pawn.isThreatened, [(4, 6), "B"], False)
+assertFunc(b_pawn.isThreatened, [(5, 6), "B"], True)
+assertFunc(b_pawn.isThreatened, [(6, 6), "B"], True)
+assertFunc(b_pawn.isThreatened, [(7, 6), "B"], False)
+assertFunc(b_pawn.isThreatened, [(8, 6), "B"], True)
 
-assertFunc(b_pawn.isThreatened, [(1, 2), Color.WHITE], True)
-assertFunc(b_pawn.isThreatened, [(2, 2), Color.WHITE], False)
-assertFunc(b_pawn.isThreatened, [(3, 2), Color.WHITE], True)
-assertFunc(b_pawn.isThreatened, [(4, 2), Color.WHITE], False)
-assertFunc(b_pawn.isThreatened, [(5, 2), Color.WHITE], True)
-assertFunc(b_pawn.isThreatened, [(6, 2), Color.WHITE], True)
-assertFunc(b_pawn.isThreatened, [(7, 2), Color.WHITE], False)
-assertFunc(b_pawn.isThreatened, [(8, 2), Color.WHITE], True)
+assertFunc(b_pawn.isThreatened, [(1, 2), "W"], True)
+assertFunc(b_pawn.isThreatened, [(2, 2), "W"], False)
+assertFunc(b_pawn.isThreatened, [(3, 2), "W"], True)
+assertFunc(b_pawn.isThreatened, [(4, 2), "W"], False)
+assertFunc(b_pawn.isThreatened, [(5, 2), "W"], True)
+assertFunc(b_pawn.isThreatened, [(6, 2), "W"], True)
+assertFunc(b_pawn.isThreatened, [(7, 2), "W"], False)
+assertFunc(b_pawn.isThreatened, [(8, 2), "W"], True)
 
 # rooks
 
@@ -147,8 +167,7 @@ assertFunc(b_pawn.isThreatened, [(8, 2), Color.WHITE], True)
 
 '''getMoves'''
 # standard config
-b1 = Board((10, 10), root, boardCanvas)
-b1.initialize(draw=False)
+b1 = Board()
 
 pawnmoves = [(1, 6), (1, 5)]
 rookmoves = []
@@ -165,7 +184,6 @@ assertFunc(b1.getMoves, (4, 8), queenmoves, unpack=False)
 assertFunc(b1.getMoves, (5, 8), kingmoves, unpack=False)
 
 # custom config 1
-b2 = Board((10, 10), root, boardCanvas)
 setup = [
     "BRXXXXBQBKXXXXBR",
     "XXBPBPXXXXXXBBBP",
@@ -174,9 +192,9 @@ setup = [
     "XXXXXXXXXXXXXXXX",
     "WNWPXXXXWPXXWQXX",
     "WPWBWPWPXXWPWPWP",
-    "WRXXXXXXXXWRWKXX",
+    "WRXXXXXXXXWRWKXX"
 ]
-b2.initialize(setup,False)
+b2 = Board((10, 10), root, boardCanvas)
 
 pawnmoves1 = [(2, 5)]
 pawnmoves2 = [(3, 6), (3, 5)]
