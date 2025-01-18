@@ -126,17 +126,18 @@ boardCanvas.pack()
 '''isThreatened'''
 # pawns
 pawnsetup = [
-    "",
+    "XXXXXXXXXXXXXXXX",
     "XXBPXXBPXXXXBPXX",
-    "",
-    "",
-    "",
-    "",
+    "XXXXXXXXXXXXXXXX",
+    "XXXXXXXXXXXXXXXX",
+    "XXXXXXXXXXXXXXXX",
+    "XXXXXXXXXXXXXXXX",
     "XXWPXXWPXXXXWPXX",
-    ""
+    "XXXXXXXXXXXXXXXX"
 ]
 b_pawn = Board(pawnsetup)
 
+print("---TESTING PAWN THREATS---")
 assertFunc(b_pawn.isThreatened, [(1, 6), "B"], True)
 assertFunc(b_pawn.isThreatened, [(2, 6), "B"], False)
 assertFunc(b_pawn.isThreatened, [(3, 6), "B"], True)
@@ -145,21 +146,99 @@ assertFunc(b_pawn.isThreatened, [(5, 6), "B"], True)
 assertFunc(b_pawn.isThreatened, [(6, 6), "B"], True)
 assertFunc(b_pawn.isThreatened, [(7, 6), "B"], False)
 assertFunc(b_pawn.isThreatened, [(8, 6), "B"], True)
-
-assertFunc(b_pawn.isThreatened, [(1, 2), "W"], True)
-assertFunc(b_pawn.isThreatened, [(2, 2), "W"], False)
-assertFunc(b_pawn.isThreatened, [(3, 2), "W"], True)
-assertFunc(b_pawn.isThreatened, [(4, 2), "W"], False)
-assertFunc(b_pawn.isThreatened, [(5, 2), "W"], True)
-assertFunc(b_pawn.isThreatened, [(6, 2), "W"], True)
-assertFunc(b_pawn.isThreatened, [(7, 2), "W"], False)
-assertFunc(b_pawn.isThreatened, [(8, 2), "W"], True)
+assertFunc(b_pawn.isThreatened, [(1, 3), "W"], True)
+assertFunc(b_pawn.isThreatened, [(2, 3), "W"], False)
+assertFunc(b_pawn.isThreatened, [(3, 3), "W"], True)
+assertFunc(b_pawn.isThreatened, [(4, 3), "W"], False)
+assertFunc(b_pawn.isThreatened, [(5, 3), "W"], True)
+assertFunc(b_pawn.isThreatened, [(6, 3), "W"], True)
+assertFunc(b_pawn.isThreatened, [(7, 3), "W"], False)
+assertFunc(b_pawn.isThreatened, [(8, 3), "W"], True)
+print()
 
 # rooks
+rooksetup = [
+    "XXXXXXXXXXXXXXXX",
+    "XXBRXXXXXXXXBRXX",
+    "XXXXXXXXXXXXXXXX",
+    "XXXXXXXXXXXXBPXX",
+    "XXXXXXXXXXXXWPXX",
+    "XXXXXXXXXXXXXXXX",
+    "XXWRXXXXXXXXWRXX",
+    "XXXXXXXXXXXXXXXX"
+]
+b_rook = Board(rooksetup)
+
+print("---TESTING ROOK THREATS---")
+assertFunc(b_rook.isThreatened, [(2, 1), "W"], True)
+assertFunc(b_rook.isThreatened, [(1, 2), "W"], True)
+assertFunc(b_rook.isThreatened, [(3, 2), "W"], True)
+assertFunc(b_rook.isThreatened, [(2, 4), "W"], True)
+assertFunc(b_rook.isThreatened, [(2, 5), "B"], True)
+assertFunc(b_rook.isThreatened, [(7, 4), "B"], False)
+assertFunc(b_rook.isThreatened, [(7, 5), "W"], False)
+print()
 
 # knights
+knightsetup = [
+    "XXXXXXXXXXXXXXXX",
+    "XXXXXXXXXXXXXXXX",
+    "XXXXWNXXXXXXXXXX",
+    "XXXXXXXXXXXXXXXX",
+    "XXXXXXXXXXXXXXXX",
+    "XXXXXXXXXXBNXXXX",
+    "XXXXXXXXXXXXXXXX",
+    "XXXXXXXXXXXXXXXX"
+]
+b_knight = Board(knightsetup)
+
+print("---TESTING KNIGHT THREATS---")
+wt_pos = [(5, 4), (7, 4), (8, 5), (8, 7), (7, 8), (5, 8), (4, 7), (4, 5)]
+wf_pos = []
+for x in range(1, 9):
+    for y in range(1, 9):
+        if (x, y) not in wt_pos:
+            wf_pos.append((x, y))
+bt_pos = [(2, 1), (4, 1), (5, 2), (5, 4), (4, 5), (2, 5), (1, 4), (1, 2)]
+bf_pos = []
+for x in range(1, 9):
+    for y in range(1, 9):
+        if (x, y) not in bt_pos:
+            bf_pos.append((x, y))
+for pos in wt_pos:
+    assertFunc(b_knight.isThreatened, [pos, "W"], True)
+for pos in wf_pos:
+    assertFunc(b_knight.isThreatened, [pos, "W"], False)
+for pos in bt_pos:
+    assertFunc(b_knight.isThreatened, [pos, "B"], True)
+for pos in bf_pos:
+    assertFunc(b_knight.isThreatened, [pos, "B"], False)
+print()
 
 # bishops
+bishopsetup = [
+    "XXXXXXXXXXXXXXXX",
+    "XXBBXXXXXXXXBBXX",
+    "XXXXXXXXXXXXXXXX",
+    "XXXXXXBRXXXXXXXX",
+    "XXXXXXXXWRXXXXXX",
+    "XXXXXXXXXXXXXXXX",
+    "XXWBXXXXXXXXWBXX",
+    "XXXXXXXXXXXXXXXX"
+]
+b_bishop = Board(bishopsetup)
+
+print ("---TESTING BISHOP THREATS---")
+assertFunc(b_bishop.isThreatened, [(2, 7), "W"], True)
+assertFunc(b_bishop.isThreatened, [(7, 7), "W"], False)
+assertFunc(b_bishop.isThreatened, [(2, 2), "B"], False)
+assertFunc(b_bishop.isThreatened, [(7, 2), "B"], True)
+assertFunc(b_bishop.isThreatened, [(1, 6), "B"], True)
+assertFunc(b_bishop.isThreatened, [(1, 8), "B"], True)
+assertFunc(b_bishop.isThreatened, [(3, 8), "B"], True)
+assertFunc(b_bishop.isThreatened, [(4, 4), "B"], False)
+assertFunc(b_bishop.isThreatened, [(5, 5), "W"], False)
+print()
 
 # queens
 
@@ -194,7 +273,7 @@ setup = [
     "WPWBWPWPXXWPWPWP",
     "WRXXXXXXXXWRWKXX"
 ]
-b2 = Board((10, 10), root, boardCanvas)
+b2 = Board(setup)
 
 pawnmoves1 = [(2, 5)]
 pawnmoves2 = [(3, 6), (3, 5)]

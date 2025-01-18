@@ -17,34 +17,6 @@ class GameState(Enum):
     CHECKMATE = 2
     STALEMATE = 3
 
-# might get rid of this later if it proves to not be useful
-class Piece:
-    WHITE = "W"
-    BLACK = "B"
-    NOCOLOR = NOTYPE = "X"
-
-    PAWN = "P"
-    ROOK = "R"
-    KNIGHT = "N"
-    BISHOP = "B"
-    QUEEN = "Q"
-    KING = "K"
-    EMPTY = "XX"
-
-    WHITEPAWN = "WP"
-    WHITEROOK = "WR"
-    WHITEKNIGHT = "WN"
-    WHITEBISHOP = "WB"
-    WHITEQUEEN = "WQ"
-    WHITEKING = "WK"
-
-    BLACKPAWN = "BP"
-    BLACKROOK = "BR"
-    BLACKKNIGHT = "BN"
-    BLACKBISHOP = "BB"
-    BLACKQUEEN = "BQ"
-    BLACKKING = "BK"
-
 class Board:
     # setup will replace the default board configuration
     # other (MUST BE A BOARD) will create a copy of that board
@@ -65,9 +37,11 @@ class Board:
                     "XXXXXXXXXXXXXXXX",
                     "XXXXXXXXXXXXXXXX",
                     "WPWPWPWPWPWPWPWP",
-                    "WRWNWBWKWQWBWNWR"
+                    "WRWNWBWQWKWBWNWR"
                 ]
-            else: self.spaces = setup
+            else: 
+                #TODO: add validation to make sure board is correctly generated
+                self.spaces = setup
             self.curr_player = "W" # whose turn it is
             self.ep_clear_list = [] # list of en passant values to reset at the end of the turn
             self.game_state = GameState.NORMAL
@@ -109,6 +83,7 @@ class Board:
     # if there is another piece occupying that space, remove (take) that piece
     # startPos and endPos are tuples representing (x, y) coordinates
     def movePiece (self, startPos, endPos):
+        #print ("Moving " + str(self.getSpace(startPos)) + " from " + str(startPos) + " to " + str(endPos)) #DEBUG
         self.setSpace(endPos, self.getSpace(startPos))
         self.setSpace(startPos, "XX")
     
@@ -303,7 +278,9 @@ class Board:
         movesToRemove = []
         for move in moves:
             newboard = Board(other=self)
+            #print(newboard.spaces) #DEBUG
             newboard.movePiece(pos, move)
+            #print(newboard.spaces) #DEBUG
             if newboard.isThreatened(newboard.getKing(newboard.curr_player), newboard.curr_player):
                 movesToRemove.append(move)
         for move in movesToRemove:
@@ -329,21 +306,21 @@ class Board:
             moves.append(nextPos)
         for nextX in range(x-1, 0, -1):
             nextPos = (nextX, y)
-            if nextPos in self.spaces: #occupied
+            if self.getSpace(nextPos) != "XX": #occupied
                 if self.getSpace(nextPos)[0] == enemyclr:
                     moves.append(nextPos)
                 break
             moves.append(nextPos)
         for nextY in range(y+1, 9):
             nextPos = (x, nextY)
-            if nextPos in self.spaces: #occupied
+            if self.getSpace(nextPos) != "XX": #occupied
                 if self.getSpace(nextPos)[0] == enemyclr:
                     moves.append(nextPos)
                 break
             moves.append(nextPos)
         for nextY in range(y-1, 0, -1):
             nextPos = (x, nextY)
-            if nextPos in self.spaces: #occupied
+            if self.getSpace(nextPos) != "XX": #occupied
                 if self.getSpace(nextPos)[0] == enemyclr:
                     moves.append(nextPos)
                 break
@@ -420,7 +397,3 @@ class Board:
         else:
             self.game_state = GameState.NORMAL
         return self.game_state
-
-# a special board WITH GRAPHICAL REPRESENTATION that will be used as the main board for the game
-class MainBoard(Board):
-    pass
