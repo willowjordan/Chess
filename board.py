@@ -18,6 +18,24 @@ class GameState(Enum):
     STALEMATE = 3
 
 class Board:
+    # return the opposite color of the one given
+    @staticmethod
+    def oppColor(color):
+        if color == "W": return "B"
+        else: return "W"
+
+    @staticmethod
+    def posToArrayCoords(pos):
+        rowNum = pos[1]-1
+        colNum = (pos[0]-1)*2
+        return (rowNum, colNum)
+
+    @staticmethod
+    def arrayCoordsToPos(coords):
+        x = coords[1]+1
+        y = (coords[0]/2)+1
+        return (x, y)
+    
     # setup will replace the default board configuration
     # other (MUST BE A BOARD) will create a copy of that board
     def __init__ (self, setup:list = [], other = None):
@@ -45,18 +63,6 @@ class Board:
             self.curr_player = "W" # whose turn it is
             self.ep_clear_list = [] # list of en passant values to reset at the end of the turn
             self.game_state = GameState.NORMAL
-        
-    @staticmethod
-    def posToArrayCoords(pos):
-        rowNum = pos[1]-1
-        colNum = (pos[0]-1)*2
-        return (rowNum, colNum)
-
-    @staticmethod
-    def arrayCoordsToPos(coords):
-        x = coords[1]+1
-        y = (coords[0]/2)+1
-        return (x, y)
     
     # set the space at pos to piece_string
     # this replaces createPiece and removePiece
@@ -105,7 +111,7 @@ class Board:
         for x in range (1, 9, 1):
             for y in range (1, 9, 1):
                 if self.getSpace((x, y))[0] == color:
-                    pieces.append(x, y)
+                    pieces.append((x, y))
         return pieces
 
     # return true if a piece of *color* in space pos could be taken by a piece of the opposing color
@@ -113,8 +119,7 @@ class Board:
     def isThreatened (self, pos, color):
         x = pos[0]
         y = pos[1]
-        if color == "W": enemycolor = "B"
-        else: enemycolor = "W"
+        enemycolor = Board.oppColor(color)
         enemypawn = enemycolor + "P"
         enemyrook = enemycolor + "R"
         enemyknight = enemycolor + "N"
@@ -215,6 +220,9 @@ class Board:
     def getMoves (self, pos):
         piece = self.getSpace(pos)
         moves = []
+        if piece == "XX":
+            return moves
+        
         x = pos[0]
         y = pos[1]
         if piece[0] == "W":
@@ -226,9 +234,7 @@ class Board:
             multiplier = 1 # pawns can only move down
             orig_row = 2 # row pawns start on
 
-        if piece == "XX":
-            return moves
-        elif piece[1] == "P":
+        if piece[1] == "P":
             # check one space forward
             nextY = y + multiplier
             if self.getSpace((x, nextY)) == "XX":
@@ -293,8 +299,7 @@ class Board:
         moves = []
         x = pos[0]
         y = pos[1]
-        if self.getSpace(pos)[0] == "W": enemyclr = "B"
-        else: enemyclr = "W"
+        enemyclr = Board.oppColor(self.getSpace(pos)[0])
 
         # check in all four cardinal directions
         for nextX in range(x+1, 9):
@@ -333,8 +338,7 @@ class Board:
         moves = []
         x = pos[0]
         y = pos[1]
-        if self.getSpace(pos)[0] == "W": enemyclr = "B"
-        else: enemyclr = "W"
+        enemyclr = Board.oppColor(self.getSpace(pos)[0])
 
         step = 1
         while (x+step <= 8) & (y+step <= 8):

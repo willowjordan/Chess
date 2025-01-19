@@ -2,6 +2,14 @@ from board import *
 
 # a special board WITH GRAPHICAL REPRESENTATION that will be used as the main board for the game
 class MainBoard(Board):
+    LIGHT_SQUARE_COLOR = "#e2d2a1"
+    DARK_SQUARE_COLOR = "#ae9f70"
+    SELECTED_SQUARE_COLOR = "#6ce565"
+    NORMAL_MOVE_COLOR = "#65a2e5"
+    CAPTURE_MOVE_COLOR = "#e56565"
+    SPECIAL_MOVE_COLOR = "#b465e5"
+    CHECK_COLOR = ""
+
     @staticmethod
     def filenameToKey(fname):
         if fname[0] == "t": return "XX" # special case: transparent image
@@ -18,7 +26,7 @@ class MainBoard(Board):
     
     # pos = (x, y) coordinates for the top left corner of the board to be drawn at
     def __init__ (self, pos, root, canvas):
-        Board.__init__()
+        Board.__init__(self)
         
         # graphical variables
         self.pos = pos
@@ -37,7 +45,7 @@ class MainBoard(Board):
             self.imgs[key] = img
     
     def getImage(self, pos):
-        key = self.getSpace(pos)
+        key = self.getSpace((pos))
         img = self.imgs[key]
         return img
     
@@ -64,15 +72,15 @@ class MainBoard(Board):
 
                 # get square's background color
                 bgColor: str
-                if (light_square): bgColor = Board.LIGHT_SQUARE_COLOR
-                else: bgColor = Board.DARK_SQUARE_COLOR
-                if (self.selected_square == (a, b)): bgColor = Board.SELECTED_SQUARE_COLOR
+                if (light_square): bgColor = MainBoard.LIGHT_SQUARE_COLOR
+                else: bgColor = MainBoard.DARK_SQUARE_COLOR
+                if (self.selected_square == (a, b)): bgColor = MainBoard.SELECTED_SQUARE_COLOR
                 if (a, b) in squaresToHighlight:
-                    bgColor = Board.NORMAL_MOVE_COLOR
+                    bgColor = MainBoard.NORMAL_MOVE_COLOR
 
                 # create button
                 button: tk.Button
-                if self.getSpace(a, b) != "XX":
+                if self.getSpace((a, b)) != "XX":
                     img = self.getImage((a, b))
                     button = tk.Button(self.root, width=64, height=64, command=self.handleClick, text="", image=img)
                 else:
@@ -104,13 +112,12 @@ class MainBoard(Board):
                     self.selected_square = clickPos
                     self.drawBoard() #redraw board to show changes
         else: #square selected
-            if self.getSpace(clickPos) != "XX":
-                moves = self.getMoves(self.selected_square)
-                if clickPos in moves:
-                    self.movePiece(self.selected_square, clickPos)
-                    self.selected_square = (-1, -1)
-                    self.drawBoard()
-                    return
+            moves = self.getMoves(self.selected_square)
+            if clickPos in moves:
+                self.movePiece(self.selected_square, clickPos)
+                self.selected_square = (-1, -1)
+                self.drawBoard()
+                return
             prevPos = self.selected_square
             self.selected_square = (-1, -1) #deselect
             if self.getSpace(clickPos) != "XX":
@@ -125,13 +132,17 @@ class MainBoard(Board):
         # TODO: remove en passant counters if necessary
         
         # change sides
-        if self.curr_player == "W": self.curr_player = "B"
-        else: self.curr_player = "W"
+        self.curr_player = Board.oppColor(self.curr_player)
 
         # beginning of turn actions
         # check for check/checkmate
         self.updateGameState()
         if self.game_state == GameState.CHECKMATE:
-            pass # end game with opposite player victorious
+            self.endGame(Board.oppColor(self.curr_player))
         elif self.game_state == GameState.STALEMATE:
-            pass # end game as a tie
+            self.endGame("X")
+
+    def endGame (self, winner):
+        self.winner = winner
+        self.canvas.delete("all")
+        self.canvas.quit()
