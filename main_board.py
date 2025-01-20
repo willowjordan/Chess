@@ -1,5 +1,16 @@
 from board import *
 
+'''
+GENERAL WORKFLOW OF MAINBOARD:
+    - Turn begins
+    - drawBoard() draws the board and creates all the buttons
+    - When a button is clicked, handleClick() either selects/deselects a square or makes a move
+    - If handleClick() makes a move, it calls movePiece(), which will sometimes update en passant and castling variables
+    - movePiece() will call the inherited movePiece(), and then call changeTurns()
+    - changeTurns() removes any applicable en passant counters, then switches sides, then calls updateGameState() to check for checkmate, stalemate, etc
+
+'''
+
 # a special board WITH GRAPHICAL REPRESENTATION that will be used as the main board for the game
 class MainBoard(Board):
     LIGHT_SQUARE_COLOR = "#e2d2a1"
@@ -8,7 +19,7 @@ class MainBoard(Board):
     NORMAL_MOVE_COLOR = "#65a2e5"
     CAPTURE_MOVE_COLOR = "#e56565"
     SPECIAL_MOVE_COLOR = "#b465e5"
-    CHECK_COLOR = ""
+    CHECK_COLOR = "#e56565"
 
     @staticmethod
     def filenameToKey(fname):
@@ -52,6 +63,11 @@ class MainBoard(Board):
     def movePiece (self, startPos, endPos):
         Board.movePiece(self, startPos, endPos)
         self.changeTurns()
+
+    # open separate window to take input from user, then promote to the piece the user has selected
+    def promotePiece (self, pos):
+        print ("PROMOTE PIECE: NOT YET IMPLEMENTED")
+        Board.promotePiece(self, pos)
     
     # draw the board using tkinter
     def drawBoard (self):
@@ -75,8 +91,8 @@ class MainBoard(Board):
                 if (light_square): bgColor = MainBoard.LIGHT_SQUARE_COLOR
                 else: bgColor = MainBoard.DARK_SQUARE_COLOR
                 if (self.selected_square == (a, b)): bgColor = MainBoard.SELECTED_SQUARE_COLOR
-                if (a, b) in squaresToHighlight:
-                    bgColor = MainBoard.NORMAL_MOVE_COLOR
+                if (a, b) in squaresToHighlight: bgColor = MainBoard.NORMAL_MOVE_COLOR
+                if (self.game_state == GameState.CHECK) & (self.getSpace((a, b)) == (self.curr_player + "K")): bgColor = MainBoard.CHECK_COLOR
 
                 # create button
                 button: tk.Button
@@ -95,7 +111,7 @@ class MainBoard(Board):
             # flip square color
             light_square = not light_square
 
-        # draw grid lines
+        # TODO: draw grid lines?
 
     # handle the square at (x, y) being clicked
     # for spaces with friendly pieces, select that piece and show its moves
@@ -118,9 +134,11 @@ class MainBoard(Board):
                 self.selected_square = (-1, -1)
                 self.drawBoard()
                 return
+            # if square clicked is not in the piece's possible moves
             prevPos = self.selected_square
             self.selected_square = (-1, -1) #deselect
             if self.getSpace(clickPos) != "XX":
+                # if player has clicked on another friendly piece, select that one instead
                 if (self.getSpace(clickPos)[0] == self.curr_player) & (clickPos != prevPos): #if clicking on a different friendly piece, select
                     self.selected_square = clickPos
             self.drawBoard()
@@ -148,8 +166,6 @@ class MainBoard(Board):
             self.endGame(Board.oppColor(self.curr_player))
         elif self.game_state == GameState.STALEMATE:
             self.endGame("X")
-        
-        print(self.castling_options) #DEBUG
 
     def endGame (self, winner):
         self.winner = winner

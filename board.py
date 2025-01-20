@@ -96,12 +96,13 @@ class Board:
         pc = self.getSpace(startPos)
         self.setSpace(endPos, pc)
         self.setSpace(startPos, "XX")
-        # check for en passant move
-        if startPos in self.ep_moves:
-            if self.ep_moves[startPos] == endPos:
-                self.setSpace((endPos[0], startPos[1]), "XX") # delete piece that was captured
-        # check if piece's movement creates opportunity for en passant
+
         if pc[1] == "P": # moving piece is a pawn
+            # check for en passant move
+            if startPos in self.ep_moves:
+                if self.ep_moves[startPos] == endPos:
+                    self.setSpace((endPos[0], startPos[1]), "XX") # delete piece that was captured
+            # check if piece's movement creates opportunity for en passant
             if abs(startPos[1] - endPos[1]) == 2: # moved two squares
                 enemypawn = Board.oppColor(pc[0]) + "P"
                 midpoint = (startPos[1] + endPos[1]) // 2
@@ -112,6 +113,11 @@ class Board:
                 rightPos = (endPos[0]+1, endPos[1])
                 if self.getSpace(rightPos) == enemypawn:
                     self.ep_moves[rightPos] = epPos
+            # check for promotion
+            if self.curr_player == "W": y = 1
+            else: y = 8
+            if endPos[1] == y:
+                self.promotePiece(endPos)
         # castling
         if (self.castling_options != []):
             if self.curr_player == "W": y = 8
@@ -142,9 +148,9 @@ class Board:
                 if rstring in self.castling_options:
                     self.castling_options.remove(rstring)
 
-    
-    def promotePiece (self, pos, type):
-        self.setSpace(pos, self.getSpace()[0]+type)
+    # since this is not the main board and we cannot take player input, promote to a queen every time
+    def promotePiece (self, pos):
+        self.setSpace(pos, (self.getSpace(pos)[0]+"Q"))
     
     # return position of king
     def getKing (self, color):
@@ -190,7 +196,12 @@ class Board:
         if self.getSpace(nextPos) == enemypawn:
             return True
         
-        #TODO: check for en passant
+        # TODO: check for en passant
+        for pair in self.ep_moves.items():
+            if pair[1] == pos: # current pos is the endPos of an en passant move
+                if self.getSpace(pair[0]) == enemypawn:
+                    return True
+
 
         # check horiz/vert for rooks/queens
         for nextX in range(x+1, 9):
