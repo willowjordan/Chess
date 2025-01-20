@@ -1,12 +1,9 @@
 '''
 TO DO:
-    - Fix HypotheticalBoard
     - More testing
     - Find a way to delete unused objects from the canvas
-    - Maybe refactor board.py into Board and MainBoard classes?
-    - Implement king check/checkmate detection
-    - Implement castling
     - Implement promotion
+    - Title screen/game over screen
 '''
 
 from board import *

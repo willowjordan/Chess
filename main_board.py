@@ -129,7 +129,14 @@ class MainBoard(Board):
     # return end of game scenarios if necessary
     def changeTurns (self):
         # end of turn actions
-        # TODO: remove en passant counters if necessary
+        # remove en passant counters if necessary
+        movesToRemove = []
+        for pos in self.ep_moves.keys():
+            piece = self.getSpace(pos)
+            if (piece[0] == self.curr_player) | (piece[0] == "X"):
+                movesToRemove.append(pos)
+        for pos in movesToRemove:
+            self.ep_moves.pop(pos)
         
         # change sides
         self.curr_player = Board.oppColor(self.curr_player)
@@ -141,6 +148,8 @@ class MainBoard(Board):
             self.endGame(Board.oppColor(self.curr_player))
         elif self.game_state == GameState.STALEMATE:
             self.endGame("X")
+        
+        print(self.castling_options) #DEBUG
 
     def endGame (self, winner):
         self.winner = winner

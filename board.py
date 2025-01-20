@@ -42,7 +42,8 @@ class Board:
         if other is not None:
             self.spaces = copy.deepcopy(other.spaces)
             self.curr_player = other.curr_player
-            self.ep_clear_list = other.ep_clear_list
+            self.ep_moves = copy.deepcopy(other.ep_moves)
+            self.castling_options = copy.deepcopy(other.castling_options)
             self.game_state = other.game_state
         else:
             # 2D array of characters (basically) where two characters represent the piece color and type (e.g. WN = white knight)
@@ -61,18 +62,21 @@ class Board:
                 #TODO: add validation to make sure board is correctly generated
                 self.spaces = setup
             self.curr_player = "W" # whose turn it is
-            self.ep_clear_list = [] # list of en passant values to reset at the end of the turn
+            self.ep_moves:dict = {} # dict of possible en passant moves (key is starting position tuple, value is ending position tuple)
+            # list containing available options for castling
+            # WL = white left, BR = black right, etc
+            # will be updated as pieces move
+            self.castling_options = ["WL", "WR", "BL", "BR"]
             self.game_state = GameState.NORMAL
-    
+
     # set the space at pos to piece_string
     # this replaces createPiece and removePiece
     def setSpace (self, pos, piece_string):
         try:
             assert len(piece_string) == 2
         except AssertionError:
-            print("Error in createPiece(): piece_string must be exactly two characters!")
+            print("Error in setSpace(): piece_string must be exactly two characters!")
             exit(1)
-        # TODO: maybe add error checking to make sure pieces aren't replaced?
         arrCoords = Board.posToArrayCoords(pos)
         old = self.spaces[arrCoords[0]]
         new = old[:arrCoords[1]] + piece_string + old[arrCoords[1]+2:]
@@ -89,9 +93,55 @@ class Board:
     # if there is another piece occupying that space, remove (take) that piece
     # startPos and endPos are tuples representing (x, y) coordinates
     def movePiece (self, startPos, endPos):
-        #print ("Moving " + str(self.getSpace(startPos)) + " from " + str(startPos) + " to " + str(endPos)) #DEBUG
-        self.setSpace(endPos, self.getSpace(startPos))
+        pc = self.getSpace(startPos)
+        self.setSpace(endPos, pc)
         self.setSpace(startPos, "XX")
+        # check for en passant move
+        if startPos in self.ep_moves:
+            if self.ep_moves[startPos] == endPos:
+                self.setSpace((endPos[0], startPos[1]), "XX") # delete piece that was captured
+        # check if piece's movement creates opportunity for en passant
+        if pc[1] == "P": # moving piece is a pawn
+            if abs(startPos[1] - endPos[1]) == 2: # moved two squares
+                enemypawn = Board.oppColor(pc[0]) + "P"
+                midpoint = (startPos[1] + endPos[1]) // 2
+                epPos = (endPos[0], midpoint)
+                leftPos = (endPos[0]-1, endPos[1])
+                if self.getSpace(leftPos) == enemypawn:
+                    self.ep_moves[leftPos] = epPos
+                rightPos = (endPos[0]+1, endPos[1])
+                if self.getSpace(rightPos) == enemypawn:
+                    self.ep_moves[rightPos] = epPos
+        # castling
+        if (self.castling_options != []):
+            if self.curr_player == "W": y = 8
+            else: y = 1
+            lstring = self.curr_player + "L"
+            rstring = self.curr_player + "R"
+            rook = rstring
+            if (pc[1] == "R"):
+                if (startPos == (1, y)) & (lstring in self.castling_options):
+                    self.castling_options.remove(lstring)
+                if (startPos == (8, y)) & (rstring in self.castling_options):
+                    self.castling_options.remove(rstring)
+            if (pc[1] == "K"):
+                # check if current move is a castling move
+                if startPos == (5, y):
+                    # left castle
+                    if (endPos == (3, y)) & (lstring in self.castling_options):
+                        self.setSpace((4, y), rook)
+                        self.setSpace((1, y), "XX")
+                    # right castle
+                    if (endPos == (7, y)) & (rstring in self.castling_options):
+                        self.setSpace((6, y), rook)
+                        self.setSpace((8, y), "XX")
+
+                # remove castling options since king has now moved
+                if lstring in self.castling_options:
+                    self.castling_options.remove(lstring)
+                if rstring in self.castling_options:
+                    self.castling_options.remove(rstring)
+
     
     def promotePiece (self, pos, type):
         self.setSpace(pos, self.getSpace()[0]+type)
@@ -254,7 +304,9 @@ class Board:
                 if self.getSpace((x+1, nextY))[0] == enemyclr:
                     moves.append((x+1, nextY))
             
-            # TODO:check for en passant
+            # check for en passant
+            if pos in self.ep_moves:
+                moves.append(self.ep_moves[pos])
         elif piece[1] == "R":
             moves = self.getHorizMoves(pos)
         elif piece[1] == "N":
@@ -279,14 +331,22 @@ class Board:
                 # space must either be empty or occupied by enemy piece
                 if (self.getSpace(move) == "XX") | (self.getSpace(move)[0] == enemyclr):
                     moves.append(move)
+            # add castling options
+            if self.curr_player == "W": y = 8
+            else: y = 1
+            if (self.curr_player + "L") in self.castling_options:
+                # make sure spaces between are clear
+                if (self.getSpace((2, y)) == "XX") & (self.getSpace((3, y)) == "XX") & (self.getSpace((4, y)) == "XX"):
+                    moves.append((3, y))
+            if (self.curr_player + "R") in self.castling_options:
+                # make sure spaces between are clear
+                if (self.getSpace((6, y)) == "XX") & (self.getSpace((7, y)) == "XX"):
+                    moves.append((7, y))
         
-        # TODO: remove any moves that would put the king in check
         movesToRemove = []
         for move in moves:
             newboard = Board(other=self)
-            #print(newboard.spaces) #DEBUG
             newboard.movePiece(pos, move)
-            #print(newboard.spaces) #DEBUG
             if newboard.isThreatened(newboard.getKing(newboard.curr_player), newboard.curr_player):
                 movesToRemove.append(move)
         for move in movesToRemove:
