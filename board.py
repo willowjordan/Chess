@@ -1,6 +1,5 @@
 #from old_piece import *
 from enum import Enum
-import tkinter as tk
 import copy
 from os import walk
 
@@ -150,8 +149,8 @@ class Board:
                     self.castling_options.remove(rstring)
 
     # since this is not the main board and we cannot take player input, promote to a queen every time
-    def promotePiece (self, pos, pc = "Q"):
-        self.setSpace(pos, (self.getSpace(pos)[0]+pc))
+    def promotePiece (self, pos):
+        self.setSpace(pos, (self.getSpace(pos)[0]+"Q"))
     
     # return position of king
     def getKing (self, color):

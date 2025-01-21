@@ -1,5 +1,7 @@
 from board import *
-from promotion_window import *
+import tkinter as tk
+from tkinter import ttk
+from tkinter import messagebox
 
 '''
 GENERAL WORKFLOW OF MAINBOARD:
@@ -67,6 +69,16 @@ class MainBoard(Board):
 
     # open separate window to take input from user, then promote to the piece the user has selected
     def promotePiece (self, pos):
+        self.promotionWindow = tk.Toplevel()
+        tk.Label(self.promotionWindow, text="Choose a piece to promote to").pack()
+        option_var = tk.StringVar(self.promotionWindow)
+        entry = ttk.OptionMenu(self.promotionWindow, option_var, "Rook", "Rook", "Knight", "Bishop", "Queen")
+        entry.pack()
+        button = tk.Button(self.promotionWindow, text="OK", command=lambda:self.finalizePromotion(pos, option_var))
+        button.pack()
+
+        '''pc = messagebox.askquestion("Promotion Selection", "Select a piece to promote your pawn to")
+
         self.promotionWindow = tk.Canvas(self.root, width=448, height=192, bg="lightgray")
         self.promotionWindow.pack()
         self.canvas.delete("all")
@@ -88,12 +100,15 @@ class MainBoard(Board):
 
         queenImg = self.imgs[self.curr_player+"Q"]
         queenButton = tk.Button(self.root, width=64, height=64, command = lambda:self.finalizePromotion(pos, "Q"), text="", image=queenImg, background=MainBoard.SPECIAL_MOVE_COLOR)
-        queenWindow = self.promotionWindow.create_window(345, 64, width=64, height=64, anchor=tk.NW, window=queenButton)
-    
+        queenWindow = self.promotionWindow.create_window(345, 64, width=64, height=64, anchor=tk.NW, window=queenButton)'''
+
     # helper function for promotePiece
-    def finalizePromotion (self, pos, pc):
+    def finalizePromotion (self, pos, result):
+        # convert result to piece letter
+        if result.get() == "Knight": pc = "N"
+        else: pc = result.get()[0]
         self.setSpace(pos, (self.getSpace(pos)[0]+pc))
-        self.canvas.delete(self.promotionWindow)
+        self.promotionWindow.destroy()
         self.changeTurns()
     
     # draw the board using tkinter
@@ -157,8 +172,8 @@ class MainBoard(Board):
             moves = self.getMoves(self.selected_square)
             if clickPos in moves:
                 self.movePiece(self.selected_square, clickPos)
-                self.selected_square = (-1, -1)
-                self.drawBoard()
+                '''self.selected_square = (-1, -1)
+                self.drawBoard()'''
                 return
             # if square clicked is not in the piece's possible moves
             prevPos = self.selected_square
@@ -172,7 +187,9 @@ class MainBoard(Board):
     # take all end-of-turn actions, switch players, and take all beginning of turn actions for the next player
     # return end of game scenarios if necessary
     def changeTurns (self):
+        print ("changeTurns called!")
         # end of turn actions
+        self.selected_square = (-1, -1)
         # remove en passant counters if necessary
         movesToRemove = []
         for pos in self.ep_moves.keys():
@@ -192,6 +209,7 @@ class MainBoard(Board):
             self.endGame(Board.oppColor(self.curr_player))
         elif self.game_state == GameState.STALEMATE:
             self.endGame("X")
+        self.drawBoard()
 
     def endGame (self, winner):
         self.winner = winner
