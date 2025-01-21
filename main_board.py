@@ -47,6 +47,7 @@ class MainBoard(Board):
         self.root = root
         self.canvas = canvas
         self.selected_square = (-1, -1)
+        self.buttons = []
     
         # generate images as static object when class is created
         self.imgs:dict = {}
@@ -77,31 +78,6 @@ class MainBoard(Board):
         button = tk.Button(self.promotionWindow, text="OK", command=lambda:self.finalizePromotion(pos, option_var))
         button.pack()
 
-        '''pc = messagebox.askquestion("Promotion Selection", "Select a piece to promote your pawn to")
-
-        self.promotionWindow = tk.Canvas(self.root, width=448, height=192, bg="lightgray")
-        self.promotionWindow.pack()
-        self.canvas.delete("all")
-        self.canvas.create_window(10+32, 10+160, width=448, height=192, anchor = tk.NW, window=self.promotionWindow)
-        rectangle = self.promotionWindow.create_rectangle((1, 1), (447, 191), outline='black', width=2)
-        txt = self.promotionWindow.create_text((200,30), text="Select a piece to promote your pawn to:", font="tkDefaultFont 14")
-
-        rookImg = self.imgs[self.curr_player+"R"]
-        rookButton = tk.Button(self.root, width=64, height=64, command = lambda:self.finalizePromotion(pos, "R"), text="", image=rookImg, background=MainBoard.SPECIAL_MOVE_COLOR)
-        rookWindow = self.promotionWindow.create_window(39, 64, width=64, height=64, anchor=tk.NW, window=rookButton)
-
-        knightImg = self.imgs[self.curr_player+"N"]
-        knightButton = tk.Button(self.root, width=64, height=64, command = lambda:self.finalizePromotion(pos, "N"), text="", image=knightImg, background=MainBoard.SPECIAL_MOVE_COLOR)
-        knightWindow = self.promotionWindow.create_window(141, 64, width=64, height=64, anchor=tk.NW, window=knightButton)
-
-        bishopImg = self.imgs[self.curr_player+"B"]
-        bishopButton = tk.Button(self.root, width=64, height=64, command = lambda:self.finalizePromotion(pos, "B"), text="", image=bishopImg, background=MainBoard.SPECIAL_MOVE_COLOR)
-        bishopWindow = self.promotionWindow.create_window(243, 64, width=64, height=64, anchor=tk.NW, window=bishopButton)
-
-        queenImg = self.imgs[self.curr_player+"Q"]
-        queenButton = tk.Button(self.root, width=64, height=64, command = lambda:self.finalizePromotion(pos, "Q"), text="", image=queenImg, background=MainBoard.SPECIAL_MOVE_COLOR)
-        queenWindow = self.promotionWindow.create_window(345, 64, width=64, height=64, anchor=tk.NW, window=queenButton)'''
-
     # helper function for promotePiece
     def finalizePromotion (self, pos, result):
         # convert result to piece letter
@@ -118,8 +94,9 @@ class MainBoard(Board):
             squaresToHighlight = self.getMoves(self.selected_square)
         light_square = True
         # clear the canvas
-        self.canvas.delete("all")
+        #self.canvas.delete("all")
         # create a button for every square on the board
+        newbuttons = []
         for i in range(0, 512, 64):
             for j in range(0, 512, 64):
                 # positioning variables
@@ -146,13 +123,21 @@ class MainBoard(Board):
                 
                 # place button
                 button_window = self.canvas.create_window(x, y, width=64, height=64, anchor=tk.NW, window=button)
+                newbuttons.append(button_window)
 
                 # flip square color
                 light_square = not light_square
             # flip square color
             light_square = not light_square
 
-        # TODO: draw grid lines?
+        # delete old buttons if necessary
+        # deleting causes stuttering, but a large buildup of buttons also causes stuttering
+        # hopefully this approach will help minimize stuttering for now
+        if len(self.buttons) > 500:
+            for btn in self.buttons:
+                self.canvas.delete(btn)
+            self.buttons = newbuttons
+        else: self.buttons += newbuttons
 
     # handle the square at (x, y) being clicked
     # for spaces with friendly pieces, select that piece and show its moves
@@ -172,8 +157,6 @@ class MainBoard(Board):
             moves = self.getMoves(self.selected_square)
             if clickPos in moves:
                 self.movePiece(self.selected_square, clickPos)
-                '''self.selected_square = (-1, -1)
-                self.drawBoard()'''
                 return
             # if square clicked is not in the piece's possible moves
             prevPos = self.selected_square
@@ -187,7 +170,6 @@ class MainBoard(Board):
     # take all end-of-turn actions, switch players, and take all beginning of turn actions for the next player
     # return end of game scenarios if necessary
     def changeTurns (self):
-        print ("changeTurns called!")
         # end of turn actions
         self.selected_square = (-1, -1)
         # remove en passant counters if necessary

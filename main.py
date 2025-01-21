@@ -1,13 +1,10 @@
 '''
 TO DO:
-    - Fix diagonal movement bug:
-        - Black queens/bishops cannot move southwest to the bottom row of the board in some cases
-        - White king cannot detect threats from the bottom row if they come from the southwest
-        - The reverse of this issue does not seem to happen
-    - More testing
-    - Find a way to delete unused objects from the canvas
-    - Implement promotion
+    - More testing?
+    - Smart redraw function to reduce visual stutter?
     - Title screen/game over screen
+    - Add AI opponents?
+    - Add online multiplayer (shell programming?)?
 '''
 
 from main_board import *
@@ -39,11 +36,25 @@ print(result)'''
 root = tk.Tk()
 
 # TODO: title screen?
+titleCanvas = tk.Canvas(root, width=612, height=612)
+titleCanvas.pack()
+bg = tk.PhotoImage(file="./sprites/chess_board.png")
+titleCanvas.create_image(0, 0, image=bg, anchor=tk.NW)
+titleCanvas.create_rectangle((180, 70), (432, 130), fill="white", width=0)
+titleCanvas.create_text(306, 100, text="CHESS", font=("DejaVu Sans", 48), anchor=tk.CENTER, fill="black")
+
+def startGame():
+    titleCanvas.quit()
+
+startBtn = tk.Button(root, width=128, height=48, command=startGame, text="Start", background="lightgreen")
+titleCanvas.create_window(306, 306, width=128, height=48, anchor=tk.CENTER, window=startBtn)
+titleCanvas.mainloop()
 
 # create main canvas/board and start the game
-boardCanvas = tk.Canvas(root, width=128*6, height=128*6)
+titleCanvas.pack_forget()
+boardCanvas = tk.Canvas(root, width=612, height=612)
 boardCanvas.pack()
-mainb = MainBoard((10, 10), root, boardCanvas)
+mainb = MainBoard((50, 50), root, boardCanvas)
 mainb.drawBoard()
 
 
@@ -60,3 +71,4 @@ boardCanvas.mainloop()
 
 # TODO: results screen, maybe option to start a new game or return to title?
 #boardCanvas.pack_forget()
+print("Winner was " + str(mainb.winner))

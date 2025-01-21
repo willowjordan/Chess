@@ -253,7 +253,7 @@ class Board:
                 break
             step += 1
         step = 1
-        while (x-step > 0) & (y+step < 8):
+        while (x-step > 0) & (y+step <= 8):
             nextPos = (x-step, y+step)
             if self.getSpace(nextPos) != "XX": #occupied
                 if (self.getSpace(nextPos) == enemybishop) | (self.getSpace(nextPos) == enemyqueen):
@@ -430,7 +430,7 @@ class Board:
             moves.append(nextPos)
             step += 1
         step = 1
-        while (x-step > 0) & (y+step < 8):
+        while (x-step > 0) & (y+step <= 8):
             nextPos = (x-step, y+step)
             if self.getSpace(nextPos) != "XX": #occupied
                 if self.getSpace(nextPos)[0] == enemyclr:
