@@ -1,4 +1,5 @@
 from board import *
+from promotion_window import *
 
 '''
 GENERAL WORKFLOW OF MAINBOARD:
@@ -61,13 +62,39 @@ class MainBoard(Board):
         return img
     
     def movePiece (self, startPos, endPos):
-        Board.movePiece(self, startPos, endPos)
-        self.changeTurns()
+        pieceToPromote = Board.movePiece(self, startPos, endPos)
+        if not pieceToPromote: self.changeTurns()
 
     # open separate window to take input from user, then promote to the piece the user has selected
     def promotePiece (self, pos):
-        print ("PROMOTE PIECE: NOT YET IMPLEMENTED")
-        Board.promotePiece(self, pos)
+        self.promotionWindow = tk.Canvas(self.root, width=448, height=192, bg="lightgray")
+        self.promotionWindow.pack()
+        self.canvas.delete("all")
+        self.canvas.create_window(10+32, 10+160, width=448, height=192, anchor = tk.NW, window=self.promotionWindow)
+        rectangle = self.promotionWindow.create_rectangle((1, 1), (447, 191), outline='black', width=2)
+        txt = self.promotionWindow.create_text((200,30), text="Select a piece to promote your pawn to:", font="tkDefaultFont 14")
+
+        rookImg = self.imgs[self.curr_player+"R"]
+        rookButton = tk.Button(self.root, width=64, height=64, command = lambda:self.finalizePromotion(pos, "R"), text="", image=rookImg, background=MainBoard.SPECIAL_MOVE_COLOR)
+        rookWindow = self.promotionWindow.create_window(39, 64, width=64, height=64, anchor=tk.NW, window=rookButton)
+
+        knightImg = self.imgs[self.curr_player+"N"]
+        knightButton = tk.Button(self.root, width=64, height=64, command = lambda:self.finalizePromotion(pos, "N"), text="", image=knightImg, background=MainBoard.SPECIAL_MOVE_COLOR)
+        knightWindow = self.promotionWindow.create_window(141, 64, width=64, height=64, anchor=tk.NW, window=knightButton)
+
+        bishopImg = self.imgs[self.curr_player+"B"]
+        bishopButton = tk.Button(self.root, width=64, height=64, command = lambda:self.finalizePromotion(pos, "B"), text="", image=bishopImg, background=MainBoard.SPECIAL_MOVE_COLOR)
+        bishopWindow = self.promotionWindow.create_window(243, 64, width=64, height=64, anchor=tk.NW, window=bishopButton)
+
+        queenImg = self.imgs[self.curr_player+"Q"]
+        queenButton = tk.Button(self.root, width=64, height=64, command = lambda:self.finalizePromotion(pos, "Q"), text="", image=queenImg, background=MainBoard.SPECIAL_MOVE_COLOR)
+        queenWindow = self.promotionWindow.create_window(345, 64, width=64, height=64, anchor=tk.NW, window=queenButton)
+    
+    # helper function for promotePiece
+    def finalizePromotion (self, pos, pc):
+        self.setSpace(pos, (self.getSpace(pos)[0]+pc))
+        self.canvas.delete(self.promotionWindow)
+        self.changeTurns()
     
     # draw the board using tkinter
     def drawBoard (self):
@@ -98,12 +125,11 @@ class MainBoard(Board):
                 button: tk.Button
                 if self.getSpace((a, b)) != "XX":
                     img = self.getImage((a, b))
-                    button = tk.Button(self.root, width=64, height=64, command=self.handleClick, text="", image=img)
+                    button = tk.Button(self.root, width=64, height=64, command=self.handleClick, text="", image=img, background=bgColor)
                 else:
-                    button = tk.Button(self.root, width=64, height=64, command=self.handleClick, text="")
+                    button = tk.Button(self.root, width=64, height=64, command=self.handleClick, text="", background=bgColor)
                 
                 # place button
-                button.configure(background=bgColor)
                 button_window = self.canvas.create_window(x, y, width=64, height=64, anchor=tk.NW, window=button)
 
                 # flip square color

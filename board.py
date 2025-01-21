@@ -118,6 +118,7 @@ class Board:
             else: y = 8
             if endPos[1] == y:
                 self.promotePiece(endPos)
+                return True # return true in order to stall the program until a piece is selected
         # castling
         if (self.castling_options != []):
             if self.curr_player == "W": y = 8
@@ -149,8 +150,8 @@ class Board:
                     self.castling_options.remove(rstring)
 
     # since this is not the main board and we cannot take player input, promote to a queen every time
-    def promotePiece (self, pos):
-        self.setSpace(pos, (self.getSpace(pos)[0]+"Q"))
+    def promotePiece (self, pos, pc = "Q"):
+        self.setSpace(pos, (self.getSpace(pos)[0]+pc))
     
     # return position of king
     def getKing (self, color):
