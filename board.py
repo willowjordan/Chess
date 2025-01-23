@@ -10,6 +10,7 @@ NOTES:
         - W = White, B = Black, X = Empty
         - P = Pawn, R = Rook, N = Knight, B = Bishop, Q = Queen, K = King, X = Empty
 '''
+
 class GameState(Enum):
     NORMAL = 0
     CHECK = 1
